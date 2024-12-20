@@ -1,11 +1,13 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
-VisualStudioVersion = 17.12.35506.116 d17.12
+VisualStudioVersion = 17.12.35506.116
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WuyiMusic_API", "WuyiMusic_API\WuyiMusic_API.csproj", "{D9F719C6-98B8-46FC-B68F-1ECD88E76E97}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WuyiMusic_DAL", "WuyiMusic_DAL\WuyiMusic_DAL.csproj", "{F89715BE-EEF9-48FC-963C-0198FA4CA7B8}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WuyiMusic_Services", "WuyiMusic_Services\WuyiMusic_Services.csproj", "{71C3FC47-10A6-4847-9110-82C81992C929}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -21,6 +23,10 @@ Global
 		{F89715BE-EEF9-48FC-963C-0198FA4CA7B8}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{F89715BE-EEF9-48FC-963C-0198FA4CA7B8}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{F89715BE-EEF9-48FC-963C-0198FA4CA7B8}.Release|Any CPU.Build.0 = Release|Any CPU
+		{71C3FC47-10A6-4847-9110-82C81992C929}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{71C3FC47-10A6-4847-9110-82C81992C929}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{71C3FC47-10A6-4847-9110-82C81992C929}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{71C3FC47-10A6-4847-9110-82C81992C929}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

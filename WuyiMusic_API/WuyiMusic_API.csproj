@@ -16,7 +16,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\WuyiMusic_DAL\WuyiMusic_DAL.csproj" />
+    <ProjectReference Include="..\WuyiMusic_Services\WuyiMusic_Services.csproj" />
   </ItemGroup>
 
 </Project>
