@@ -49,5 +49,20 @@ namespace WuyiMusic_DAL.Reponsitories
                 await _context.SaveChangesAsync();
             }
         }
+
+        public async Task<IEnumerable<Role>> GetRolesByUserIdAsync(Guid userId)
+        {
+            return await _context.UserRoles
+        .Where(ur => ur.UserId == userId)
+        .Select(ur => ur.Role)
+        .ToListAsync();
+        }
+
+        public async Task AddRoleToUserAsync(Guid userId, Guid roleId)
+        {
+            var userRole = new UserRole { UserId = userId, RoleId = roleId };
+            await _context.UserRoles.AddAsync(userRole);
+            await _context.SaveChangesAsync();
+        }
     }
 }

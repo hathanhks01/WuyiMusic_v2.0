@@ -10,9 +10,4 @@
     <ProjectReference Include="..\WuyiMusic_DAL\WuyiMusic_DAL.csproj" />
   </ItemGroup>
 
-  <ItemGroup>
-    <Folder Include="IServices\" />
-    <Folder Include="Services\" />
-  </ItemGroup>
-
 </Project>
