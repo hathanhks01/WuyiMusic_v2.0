@@ -14,5 +14,7 @@ namespace WuyiMusic_DAL.IReponsitories
         Task AddAsync(UserRole userRole);
         Task UpdateAsync(UserRole userRole);
         Task DeleteAsync(Guid id);
+        Task<IEnumerable<Role>> GetRolesByUserIdAsync(Guid userId);
+        Task AddRoleToUserAsync(Guid userId, Guid roleId);
     }
 }

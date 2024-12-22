@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using WuyiMusic_DAL.DTOS;
 using WuyiMusic_DAL.Models;
 
 namespace WuyiMusic_DAL.Reponsitories
@@ -17,36 +18,29 @@ namespace WuyiMusic_DAL.Reponsitories
             _context = context;
         }
 
-        public async Task<IEnumerable<Lyrics>> GetAllAsync()
+        public Task<Lyrics> AddLyrics(LyricsDto lyricsDto)
         {
-            return await _context.Lyrics.ToListAsync();
+            throw new NotImplementedException();
         }
 
-        public async Task<Lyrics> GetByIdAsync(Guid id)
+        public Task DeleteLyrics(Guid id)
         {
-            return await _context.Lyrics.FindAsync(id);
+            throw new NotImplementedException();
         }
 
-        public async Task AddAsync(Lyrics lyrics)
+        public Task<IEnumerable<object>> GetAllLyrics()
         {
-            await _context.Lyrics.AddAsync(lyrics);
-            await _context.SaveChangesAsync();
+            throw new NotImplementedException();
         }
 
-        public async Task UpdateAsync(Lyrics lyrics)
+        public Task<object> GetByIdLyrics(Guid id)
         {
-            _context.Lyrics.Update(lyrics);
-            await _context.SaveChangesAsync();
+            throw new NotImplementedException();
         }
 
-        public async Task DeleteAsync(Guid id)
+        public Task<Lyrics> UpdateLyrics(LyricsDto lyricsDto)
         {
-            var lyrics = await GetByIdAsync(id);
-            if (lyrics != null)
-            {
-                _context.Lyrics.Remove(lyrics);
-                await _context.SaveChangesAsync();
-            }
+            throw new NotImplementedException();
         }
     }
 

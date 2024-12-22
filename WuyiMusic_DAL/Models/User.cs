@@ -23,18 +23,18 @@ namespace WuyiMusic_DAL.Models
         [Required] 
         public string Password { get; set; }
 
-        public string ProfileImage { get; set; } 
+        public string? ProfileImage { get; set; } 
 
         [Required] 
-        public DateTime CreatedAt { get; set; }
+        public DateTime? CreatedAt { get; set; }
 
         [Required] 
         public bool IsPremium { get; set; }
 
-        public virtual ICollection<UserRole> UserRoles { get; set; }
-        public virtual ICollection<Playlist> Playlists { get; set; }
-        public virtual ICollection<Comment> Comments { get; set; }
-        public virtual ICollection<Rating> Ratings { get; set; }
-        public virtual ICollection<Suggestion> Suggestions { get; set; }
+        public virtual ICollection<UserRole>? UserRoles { get; set; }
+        public virtual ICollection<Playlist>? Playlists { get; set; }
+        public virtual ICollection<Comment>? Comments { get; set; }
+        public virtual ICollection<Rating>? Ratings { get; set; }
+        public virtual ICollection<Suggestion>? Suggestions { get; set; }
     }
 }

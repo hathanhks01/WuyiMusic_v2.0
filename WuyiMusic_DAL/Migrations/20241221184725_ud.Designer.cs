@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using WuyiMusic_DAL.Models;
 
@@ -11,9 +12,11 @@ using WuyiMusic_DAL.Models;
 namespace WuyiMusic_DAL.Migrations
 {
     [DbContext(typeof(WuyiMusic_DbContext))]
-    partial class WuyiMusic_DbContextModelSnapshot : ModelSnapshot
+    [Migration("20241221184725_ud")]
+    partial class ud
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
