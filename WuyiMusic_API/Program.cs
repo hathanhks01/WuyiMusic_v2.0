@@ -2,6 +2,8 @@ using Microsoft.EntityFrameworkCore;
 using WuyiMusic_DAL.IReponsitories;
 using WuyiMusic_DAL.Models;
 using WuyiMusic_DAL.Reponsitories;
+using WuyiMusic_Services.IServices;
+using WuyiMusic_Services.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -15,7 +17,8 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
 builder.Services.AddScoped<IRoleRepository, RoleRepository>();
-
+builder.Services.AddScoped<ICommentRepository, CommentRepository>();
+builder.Services.AddScoped<ICommentService, CommentService>();
 
 var app = builder.Build();
 

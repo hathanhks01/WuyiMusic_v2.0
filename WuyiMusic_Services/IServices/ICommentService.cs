@@ -6,9 +6,9 @@ using System.Threading.Tasks;
 using WuyiMusic_DAL.DTOS;
 using WuyiMusic_DAL.Models;
 
-namespace WuyiMusic_DAL.IReponsitories
+namespace WuyiMusic_Services.IServices
 {
-    public interface ICommentRepository
+    public interface ICommentService
     {
         Task<IEnumerable<object>> GetAllComment();
         Task<object> GetByIdComment(Guid id);

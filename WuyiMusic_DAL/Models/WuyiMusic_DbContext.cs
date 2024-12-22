@@ -32,7 +32,7 @@ namespace WuyiMusic_DAL.Models
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
-            optionsBuilder.UseSqlServer("Server=MSI\\SQLEXPRESS;Database=WuyiMusicDB;TrustServerCertificate=True;Trusted_Connection=True;");
+            optionsBuilder.UseSqlServer("Server=DESKTOP-77H263D\\SQLEXPRESS;Database=WuyiMusicDB;TrustServerCertificate=True;Trusted_Connection=True;");
         }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)

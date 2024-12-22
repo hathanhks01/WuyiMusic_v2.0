@@ -329,7 +329,7 @@ namespace WuyiMusic_DAL.Migrations
 
                     b.HasIndex("UserId");
 
-                    b.ToTable("UserRole");
+                    b.ToTable("UserRoles");
                 });
 
             modelBuilder.Entity("WuyiMusic_DAL.Models.Advertisement", b =>

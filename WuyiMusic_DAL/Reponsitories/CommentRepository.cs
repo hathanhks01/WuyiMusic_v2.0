@@ -1,9 +1,12 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
+using System.ComponentModel.Design;
 using System.Linq;
+using System.Reflection.Metadata;
 using System.Text;
 using System.Threading.Tasks;
+using WuyiMusic_DAL.DTOS;
 using WuyiMusic_DAL.IReponsitories;
 using WuyiMusic_DAL.Models;
 
@@ -18,36 +21,110 @@ namespace WuyiMusic_DAL.Reponsitories
             _context = context;
         }
 
-        public async Task<IEnumerable<Comment>> GetAllAsync()
+        public async Task<Comment> AddComment(CommentDto commentDto)
         {
-            return await _context.Comments.ToListAsync();
-        }
-
-        public async Task<Comment> GetByIdAsync(Guid id)
-        {
-            return await _context.Comments.FindAsync(id);
-        }
-
-        public async Task AddAsync(Comment comment)
-        {
-            await _context.Comments.AddAsync(comment);
-            await _context.SaveChangesAsync();
-        }
-
-        public async Task UpdateAsync(Comment comment)
-        {
-            _context.Comments.Update(comment);
-            await _context.SaveChangesAsync();
-        }
-
-        public async Task DeleteAsync(Guid id)
-        {
-            var comment = await GetByIdAsync(id);
-            if (comment != null)
+            var comment = new Comment
             {
-                _context.Comments.Remove(comment);
-                await _context.SaveChangesAsync();
-            }
+                CommentId = Guid.NewGuid(),
+                TrackId = commentDto.TrackId,
+                UserId = commentDto.UserId,
+                Content = commentDto.Content,
+                CreatedAt = DateTime.Now,
+            };
+            await _context.Comments.AddAsync(comment);
+            _context.SaveChanges();
+            return comment;
+        }
+
+        public Task DeleteComment(Guid id)
+        {
+            throw new NotImplementedException();
+        }
+
+        public async Task<IEnumerable<object>> GetAllComment()
+        {
+            var result = await _context.Comments
+            .Include(cm => cm.Track)
+                .ThenInclude(tr => tr.Album)  // Bao gồm thông tin Album của Track
+            .Include(cm => cm.Track)
+                .ThenInclude(tr => tr.Artist) // Bao gồm thông tin Artist của Track
+            .Include(cm => cm.User)
+            .Select(cm => new
+            {
+                cm.CommentId,
+                cm.TrackId,
+                cm.UserId,
+                cm.Content,
+                cm.CreatedAt,
+                Track = cm.Track != null ? new
+                {
+                    cm.Track.TrackId,
+                    cm.Track.Title,
+                    cm.Track.Duration,
+                    cm.Track.ArtistId,
+                    cm.Track.FilePath,
+                    Album = cm.Track.Album != null ? new
+                    {
+                        cm.Track.Album.AlbumId,
+                        cm.Track.Album.Title
+                    } : null,
+                    Artist = cm.Track.Artist != null ? new
+                    {
+                        cm.Track.Artist.ArtistId,
+                        cm.Track.Artist.Name
+                    } : null
+                } : null,
+                User = cm.User != null ? new
+                {
+                    cm.User.UserId,
+                    cm.User.Username,
+                    cm.User.Email,
+                    cm.User.ProfileImage,
+                    cm.User.CreatedAt
+                } : null
+            }).ToListAsync();
+
+                return result;
+        }
+
+        public async Task<object> GetByIdComment(Guid id)
+        {
+            var result = await _context.Comments.Where(cm => cm.CommentId == id).Select(cm => new
+            {
+                cm.CommentId,
+                cm.Content,
+                cm.CreatedAt,
+                Track = cm.Track == null ? null : new
+                {
+                    cm.Track.TrackId,
+                    cm.Track.Title,
+                    cm.Track.Duration
+                },
+                User = cm.User == null ? null : new
+                {
+                    cm.User.UserId,
+                    cm.User.Username,
+                    cm.User.Email
+                }
+            }).FirstOrDefaultAsync();         
+            return result;
+        }
+
+        public async Task<Comment> UpdateComment(CommentDto commentDto)
+        {
+            if (commentDto == null) throw new ArgumentNullException(nameof(commentDto));
+
+            var existingComment = await _context.Comments
+                .FirstOrDefaultAsync(cm => cm.CommentId == commentDto.CommentId);
+
+            if (existingComment == null) throw new InvalidOperationException("Comment không tồn tại.");
+
+            existingComment.TrackId = commentDto.TrackId;
+            existingComment.UserId = commentDto.UserId;
+            existingComment.Content = commentDto.Content;
+            existingComment.CreatedAt = commentDto.CreatedAt;
+            await _context.SaveChangesAsync();
+            return existingComment;
         }
     }
 

@@ -12,7 +12,7 @@ using WuyiMusic_DAL.Models;
 namespace WuyiMusic_DAL.Migrations
 {
     [DbContext(typeof(WuyiMusic_DbContext))]
-    [Migration("20241213173339_Initialization")]
+    [Migration("20241220093258_Initialization")]
     partial class Initialization
     {
         /// <inheritdoc />
@@ -332,7 +332,7 @@ namespace WuyiMusic_DAL.Migrations
 
                     b.HasIndex("UserId");
 
-                    b.ToTable("UserRole");
+                    b.ToTable("UserRoles");
                 });
 
             modelBuilder.Entity("WuyiMusic_DAL.Models.Advertisement", b =>
