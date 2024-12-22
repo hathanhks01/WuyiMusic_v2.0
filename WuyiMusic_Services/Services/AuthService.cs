@@ -31,13 +31,11 @@ namespace WuyiMusic_Services.Services
 
         public async Task<User> RegisterAsync(RegisterDto registerDto)
         {
-            // Kiểm tra xem tên người dùng đã tồn tại chưa
             if (await _context.Users.AnyAsync(u => u.Email == registerDto.Email))
             {
                 throw new Exception("Email already exists");
             }
 
-            // Chuyển đổi DTO sang User
             var user = _mapper.Map<User>(registerDto);
             user.Password = HashPassword(registerDto.Password);
             user.Email = registerDto.Email;
@@ -46,13 +44,27 @@ namespace WuyiMusic_Services.Services
 
             await _context.Users.AddAsync(user);
             await _context.SaveChangesAsync();
+            //
+            var userRole = await _context.Roles.FirstOrDefaultAsync(r => r.RoleName == "user");
+            if (userRole == null)
+            {
+                throw new Exception("Role 'user' does not exist");
+            }
 
+            var userRoleMapping = new UserRole
+            {
+                UserId = user.UserId,
+                RoleId = userRole.RoleId
+            };
+
+            await _context.UserRoles.AddAsync(userRoleMapping);
+            await _context.SaveChangesAsync();
             return user;
         }
 
         public async Task<(User user, string token)> LoginAsync(LoginDto loginDto)
         {
-            var user = await _context.Users.SingleOrDefaultAsync(u => u.Username == loginDto.Username);
+            var user = await _context.Users.Include(u => u.UserRoles).ThenInclude(ur => ur.Role).SingleOrDefaultAsync(u => u.Username == loginDto.Username);
             if (user == null || !VerifyPassword(loginDto.Password, user.Password))
             {
                 throw new Exception("Invalid username or password");

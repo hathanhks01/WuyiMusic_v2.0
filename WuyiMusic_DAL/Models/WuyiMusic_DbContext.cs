@@ -137,6 +137,13 @@ namespace WuyiMusic_DAL.Models
                 .WithOne(ur => ur.Role)
                 .HasForeignKey(ur => ur.RoleId)
                 .OnDelete(DeleteBehavior.Cascade);
+            // add data base for role
+            modelBuilder.Entity<Role>().HasData(
+               new Role { RoleId = Guid.Parse("d1f4eaa0-1b2c-42e8-9ff7-ff6f983ae412"), RoleName = "admin" },
+               new Role { RoleId = Guid.Parse("94a3ea36-b30c-4ad8-8a9e-8262fb030fdc"), RoleName = "artist" },
+               new Role { RoleId = Guid.Parse("58de85c3-30d8-4f2c-940c-002c6bb214e2"), RoleName = "user" }
+           );
+
 
             // Suggestion configurations
             modelBuilder.Entity<Suggestion>()
