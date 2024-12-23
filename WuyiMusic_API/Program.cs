@@ -49,13 +49,16 @@ builder.Services.AddAutoMapper(typeof(MappingProfiles)); // Đăng ký profile
 
 // Thêm các dịch vụ repository và service
 builder.Services.AddScoped<IRoleRepository, RoleRepository>();
-<<<<<<< HEAD
 builder.Services.AddScoped<ICommentRepository, CommentRepository>();
 builder.Services.AddScoped<ICommentService, CommentService>();
-=======
 builder.Services.AddScoped<IUserRepository, UserRepository>();
 builder.Services.AddScoped<IAuthService, AuthService>();
->>>>>>> 8b21784ebdd9a0a14a9d08211c14ef821522d68f
+builder.Services.AddScoped<ILyricsRepository, LyricsRepository>();
+builder.Services.AddScoped<ILyricsService, LyricsService>();
+builder.Services.AddScoped<IPlaylistRepository, PlaylistRepository>();
+builder.Services.AddScoped<IPlaylistService, PlaylistService>();
+builder.Services.AddScoped<IPlaylistTrackRepository, PlaylistTrackRepository>();
+builder.Services.AddScoped<IPlaylistTrackService, PlaylistTrackService>();
 
 var app = builder.Build();
 

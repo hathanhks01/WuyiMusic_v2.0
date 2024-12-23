@@ -18,7 +18,7 @@ namespace WuyiMusic_API.Controllers
             _commentSer = commentSer;
         }
 
-        // GET: api/role
+        
         [HttpGet]
         public async Task<ActionResult<IEnumerable<Comment>>> GetAllComment()
         {
@@ -57,7 +57,7 @@ namespace WuyiMusic_API.Controllers
         }
 
         [HttpDelete("{id}")]
-        public async Task<IActionResult> DeleteRole(Guid id)
+        public async Task<IActionResult> DeleteComment(Guid id)
         {
             throw new NotImplementedException();
         }

@@ -8,8 +8,9 @@ namespace WuyiMusic_DAL.DTOS
 {
     public class PlaylistDto
     {
-        public int PlaylistId { get; set; }
-        public string Name { get; set; }
-        public int UserId { get; set; }
+        public Guid PlaylistId { get; set; } 
+        public string Tittle { get; set; }
+        public Guid UserId { get; set; }
+        public DateTime CreatedAt { get; set; }
     }
 }

@@ -18,9 +18,17 @@ namespace WuyiMusic_DAL.Reponsitories
             _context = context;
         }
 
-        public Task<Lyrics> AddLyrics(LyricsDto lyricsDto)
+        public async Task<Lyrics> AddLyrics(LyricsDto lyricsDto)
         {
-            throw new NotImplementedException();
+            var comment = new Lyrics
+            {
+                LyricsId = Guid.NewGuid(),
+                TrackId = lyricsDto.TrackId,
+                Content = lyricsDto.Content,
+            };
+            await _context.Lyrics.AddAsync(comment);
+            _context.SaveChanges();
+            return comment;
         }
 
         public Task DeleteLyrics(Guid id)
@@ -28,19 +36,68 @@ namespace WuyiMusic_DAL.Reponsitories
             throw new NotImplementedException();
         }
 
-        public Task<IEnumerable<object>> GetAllLyrics()
+        public async Task<IEnumerable<object>> GetAllLyrics()
         {
-            throw new NotImplementedException();
+            var result = await _context.Lyrics
+            .Include(lr => lr.Track)
+                .ThenInclude(tr => tr.Album) 
+            .Include(lr => lr.Track)
+                .ThenInclude(tr => tr.Artist) 
+            .Select(lr => new
+            {
+                lr.LyricsId,
+                lr.Content,
+                Track = lr.Track != null ? new
+                {
+                    lr.Track.TrackId,
+                    lr.Track.Title,
+                    lr.Track.Duration,
+                    lr.Track.FilePath,
+                    Album = lr.Track.Album != null ? new
+                    {
+                        lr.Track.Album.AlbumId,
+                        lr.Track.Album.Title
+                    } : null,
+                    Artist = lr.Track.Artist != null ? new
+                    {
+                        lr.Track.Artist.ArtistId,
+                        lr.Track.Artist.Name
+                    } : null
+                } : null,               
+            }).ToListAsync();
+
+            return result;
         }
 
-        public Task<object> GetByIdLyrics(Guid id)
+        public async Task<object> GetByIdLyrics(Guid id)
         {
-            throw new NotImplementedException();
+            var result = await _context.Lyrics.Where(lr => lr.LyricsId == id).Select(lr => new
+            {
+                lr.LyricsId,
+                lr.Content,
+                Track = lr.Track == null ? null : new
+                {
+                    lr.Track.TrackId,
+                    lr.Track.Title,
+                    lr.Track.Duration
+                },               
+            }).FirstOrDefaultAsync();
+            return result;
         }
 
-        public Task<Lyrics> UpdateLyrics(LyricsDto lyricsDto)
+        public async Task<Lyrics> UpdateLyrics(LyricsDto lyricsDto)
         {
-            throw new NotImplementedException();
+            if (lyricsDto == null) throw new ArgumentNullException(nameof(lyricsDto));
+
+            var existingLyrics = await _context.Lyrics
+                .FirstOrDefaultAsync(lr => lr.LyricsId == lyricsDto.LyricsId);
+
+            if (existingLyrics == null) throw new InvalidOperationException("Comment không tồn tại.");
+
+            existingLyrics.TrackId = lyricsDto.TrackId;
+            existingLyrics.Content = lyricsDto.Content;
+            await _context.SaveChangesAsync();
+            return existingLyrics;
         }
     }
 

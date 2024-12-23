@@ -1,4 +1,5 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using AutoMapper;
+using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel.Design;
@@ -44,47 +45,41 @@ namespace WuyiMusic_DAL.Reponsitories
         public async Task<IEnumerable<object>> GetAllComment()
         {
             var result = await _context.Comments
-            .Include(cm => cm.Track)
-                .ThenInclude(tr => tr.Album)  // Bao gồm thông tin Album của Track
-            .Include(cm => cm.Track)
-                .ThenInclude(tr => tr.Artist) // Bao gồm thông tin Artist của Track
-            .Include(cm => cm.User)
-            .Select(cm => new
+        .Include(cm => cm.Track)
+            .ThenInclude(tr => tr.Album)
+        .Include(cm => cm.Track)
+            .ThenInclude(tr => tr.Artist)
+        .Include(cm => cm.User)
+        .Select(cm => new
+        {
+            cm.CommentId,
+            cm.Content,
+            cm.CreatedAt,
+            Track = cm.Track == null ? null : new
             {
-                cm.CommentId,
-                cm.TrackId,
-                cm.UserId,
-                cm.Content,
-                cm.CreatedAt,
-                Track = cm.Track != null ? new
+                cm.Track.TrackId,
+                cm.Track.Title,
+                cm.Track.Duration,
+                cm.Track.FilePath,
+                Album = cm.Track.Album == null ? null : new
                 {
-                    cm.Track.TrackId,
-                    cm.Track.Title,
-                    cm.Track.Duration,
-                    cm.Track.ArtistId,
-                    cm.Track.FilePath,
-                    Album = cm.Track.Album != null ? new
-                    {
-                        cm.Track.Album.AlbumId,
-                        cm.Track.Album.Title
-                    } : null,
-                    Artist = cm.Track.Artist != null ? new
-                    {
-                        cm.Track.Artist.ArtistId,
-                        cm.Track.Artist.Name
-                    } : null
-                } : null,
-                User = cm.User != null ? new
+                    cm.Track.Album.AlbumId,
+                    cm.Track.Album.Title
+                },
+                Artist = cm.Track.Artist == null ? null : new
                 {
-                    cm.User.UserId,
-                    cm.User.Username,
-                    cm.User.Email,
-                    cm.User.ProfileImage,
-                    cm.User.CreatedAt
-                } : null
-            }).ToListAsync();
-
-                return result;
+                    cm.Track.Artist.ArtistId,
+                    cm.Track.Artist.Name
+                }
+            },
+            User = cm.User == null ? null : new
+            {
+                cm.User.UserId,
+                cm.User.Username,
+                cm.User.Email,
+            }
+        }).ToListAsync();
+            return result;
         }
 
         public async Task<object> GetByIdComment(Guid id)
@@ -98,7 +93,17 @@ namespace WuyiMusic_DAL.Reponsitories
                 {
                     cm.Track.TrackId,
                     cm.Track.Title,
-                    cm.Track.Duration
+                    cm.Track.Duration,
+                    Album = cm.Track.Album == null ? null : new
+                    {
+                        cm.Track.Album.AlbumId,
+                        cm.Track.Album.Title
+                    },
+                    Artist = cm.Track.Artist == null ? null : new
+                    {
+                        cm.Track.Artist.ArtistId,
+                        cm.Track.Artist.Name
+                    }
                 },
                 User = cm.User == null ? null : new
                 {
@@ -127,5 +132,4 @@ namespace WuyiMusic_DAL.Reponsitories
             return existingComment;
         }
     }
-
 }

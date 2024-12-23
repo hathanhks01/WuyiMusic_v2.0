@@ -3,6 +3,8 @@ using Microsoft.EntityFrameworkCore.Migrations;
 
 #nullable disable
 
+#pragma warning disable CA1814 // Prefer jagged arrays over multidimensional
+
 namespace WuyiMusic_DAL.Migrations
 {
     /// <inheritdoc />
@@ -46,7 +48,7 @@ namespace WuyiMusic_DAL.Migrations
                     Username = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     Email = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     Password = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    ProfileImage = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    ProfileImage = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
                     IsPremium = table.Column<bool>(type: "bit", nullable: false)
                 },
@@ -288,6 +290,16 @@ namespace WuyiMusic_DAL.Migrations
                         principalTable: "Users",
                         principalColumn: "UserId",
                         onDelete: ReferentialAction.Restrict);
+                });
+
+            migrationBuilder.InsertData(
+                table: "Roles",
+                columns: new[] { "RoleId", "RoleName" },
+                values: new object[,]
+                {
+                    { new Guid("58de85c3-30d8-4f2c-940c-002c6bb214e2"), "user" },
+                    { new Guid("94a3ea36-b30c-4ad8-8a9e-8262fb030fdc"), "artist" },
+                    { new Guid("d1f4eaa0-1b2c-42e8-9ff7-ff6f983ae412"), "admin" }
                 });
 
             migrationBuilder.CreateIndex(

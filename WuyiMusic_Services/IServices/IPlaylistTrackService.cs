@@ -6,9 +6,9 @@ using System.Threading.Tasks;
 using WuyiMusic_DAL.DTOS;
 using WuyiMusic_DAL.Models;
 
-namespace WuyiMusic_DAL.IReponsitories
+namespace WuyiMusic_Services.IServices
 {
-    public interface IPlaylistTrackRepository
+    public interface IPlaylistTrackService
     {
         Task<IEnumerable<object>> GetAllPlaylistTrack();
         Task<object> GetByIdPlaylistTrack(Guid id);
