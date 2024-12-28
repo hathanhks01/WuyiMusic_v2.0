@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using WuyiMusic_DAL.DTOS;
 using WuyiMusic_DAL.IReponsitories;
 using WuyiMusic_DAL.Models;
 
@@ -18,36 +19,75 @@ namespace WuyiMusic_DAL.Reponsitories
             _context = context;
         }
 
-        public async Task<IEnumerable<Album>> GetAllAsync()
+        public async Task<Album> AddComment(AlbumDto albumDto)
         {
-            return await _context.Albums.ToListAsync();
-        }
-
-        public async Task<Album> GetByIdAsync(Guid id)
-        {
-            return await _context.Albums.FindAsync(id);
-        }
-
-        public async Task AddAsync(Album album)
-        {
-            await _context.Albums.AddAsync(album);
-            await _context.SaveChangesAsync();
-        }
-
-        public async Task UpdateAsync(Album album)
-        {
-            _context.Albums.Update(album);
-            await _context.SaveChangesAsync();
-        }
-
-        public async Task DeleteAsync(Guid id)
-        {
-            var album = await GetByIdAsync(id);
-            if (album != null)
+            var album = new Album
             {
-                _context.Albums.Remove(album);
-                await _context.SaveChangesAsync();
-            }
+                AlbumId = Guid.NewGuid(),
+                ArtistId = albumDto.ArtistId,
+                Title = albumDto.Title,
+                ReleaseDate = albumDto.ReleaseDate,
+            };
+            await _context.Albums.AddAsync(album);
+            _context.SaveChanges();
+            return album;
+        }
+
+        public Task DeleteAlbum(Guid id)
+        {
+            throw new NotImplementedException();
+        }
+
+        public async Task<IEnumerable<object>> GetAllAlbum()
+        {
+            var result = await _context.Albums
+             .Include(alb => alb.Artist)
+         .Select(alb => new
+         {
+             alb.AlbumId,
+             alb.Title,
+             alb.ReleaseDate,
+
+             Artist = alb.Artist == null ? null : new
+             {
+                 alb.Artist.ArtistId,
+                 alb.Artist.Name
+             }
+         }).ToListAsync();
+            return result;
+        }
+
+        public async Task<object> GetByIdAlbum(Guid id)
+        {
+            var result = await _context.Albums.Where(alb => alb.AlbumId == id).Select(alb => new
+            {
+                alb.AlbumId,
+                alb.Title,
+                alb.ReleaseDate,
+
+                Artist = alb.Artist == null ? null : new
+                {
+                    alb.Artist.ArtistId,
+                    alb.Artist.Name
+                }
+            }).FirstOrDefaultAsync();
+            return result;
+        }
+
+        public async Task<Album> UpdateAlbum(AlbumDto albumDto)
+        {
+            if (albumDto == null) throw new ArgumentNullException(nameof(albumDto));
+
+            var existingAlbum = await _context.Albums
+                .FirstOrDefaultAsync(alb => alb.AlbumId == albumDto.AlbumId);
+
+            if (existingAlbum == null) throw new InvalidOperationException("Album không tồn tại.");
+
+            existingAlbum.ArtistId = albumDto.ArtistId;
+            existingAlbum.Title = albumDto.Title;
+            existingAlbum.ReleaseDate = albumDto.ReleaseDate;
+            await _context.SaveChangesAsync();
+            return existingAlbum;
         }
     }
 

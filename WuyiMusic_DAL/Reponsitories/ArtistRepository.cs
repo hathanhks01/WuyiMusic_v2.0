@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using WuyiMusic_DAL.DTOS;
 using WuyiMusic_DAL.IReponsitories;
 using WuyiMusic_DAL.Models;
 
@@ -18,36 +19,51 @@ namespace WuyiMusic_DAL.Reponsitories
             _context = context;
         }
 
-        public async Task<IEnumerable<Artist>> GetAllAsync()
+        public async Task<Artist> AddArtist(ArtistDto artistDto)
         {
-            return await _context.Artists.ToListAsync();
-        }
-
-        public async Task<Artist> GetByIdAsync(Guid id)
-        {
-            return await _context.Artists.FindAsync(id);
-        }
-
-        public async Task AddAsync(Artist artist)
-        {
-            await _context.Artists.AddAsync(artist);
-            await _context.SaveChangesAsync();
-        }
-
-        public async Task UpdateAsync(Artist artist)
-        {
-            _context.Artists.Update(artist);
-            await _context.SaveChangesAsync();
-        }
-
-        public async Task DeleteAsync(Guid id)
-        {
-            var artist = await GetByIdAsync(id);
-            if (artist != null)
+            var artist = new Artist
             {
-                _context.Artists.Remove(artist);
-                await _context.SaveChangesAsync();
-            }
+                ArtistId = Guid.NewGuid(),
+                Name = artistDto.Name,
+                Bio = artistDto.Bio,
+                ArtistImage = artistDto.ArtistImage,
+                CreatedAt = DateTime.Now,
+            };
+            await _context.Artists.AddAsync(artist);
+            _context.SaveChanges();
+            return artist;
+        }
+
+        public Task DeleteArtist(Guid id)
+        {
+            throw new NotImplementedException();
+        }
+
+        public  async Task<IEnumerable<object>> GetAllArtist()
+        {
+            return await _context.Artists.ToListAsync();  
+        }
+
+        public async Task<object> GetByIdArtist(Guid id)
+        {
+            return await _context.Artists.FirstOrDefaultAsync(x => x.ArtistId == id); 
+        }
+
+        public async Task<Artist> UpdateArtist(ArtistDto artistDto)
+        {
+            if (artistDto == null) throw new ArgumentNullException(nameof(artistDto));
+
+            var existingArtists = await _context.Artists
+                .FirstOrDefaultAsync(cm => cm.ArtistId == artistDto.ArtistId);
+
+            if (existingArtists == null) throw new InvalidOperationException("Artists không tồn tại.");
+
+            existingArtists.Name = artistDto.Name;
+            existingArtists.Bio = artistDto.Bio;
+            existingArtists.ArtistImage = artistDto.ArtistImage;
+            existingArtists.CreatedAt = artistDto.CreatedAt;
+            await _context.SaveChangesAsync();
+            return existingArtists;
         }
     }
 }
