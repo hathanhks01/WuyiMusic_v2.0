@@ -11,6 +11,6 @@ namespace WuyiMusic_Services.IServices
     public interface IAuthService
     {
         Task<User> RegisterAsync(RegisterDto registerDto);
-        Task<(User user, string token)> LoginAsync(LoginDto loginDto);
+        Task<(User user, string token)> LoginAsync(string userName, string passWord);
     }
 }

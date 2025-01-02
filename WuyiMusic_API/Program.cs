@@ -23,6 +23,9 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 builder.Services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());
 
+// Đăng ký HttpClient
+builder.Services.AddHttpClient();
+
 var jwtSettings = builder.Configuration.GetSection("JwtSettings");
 
 // Cấu hình dịch vụ xác thực
@@ -46,6 +49,16 @@ builder.Services.AddAuthentication(options =>
 });
 
 builder.Services.AddAutoMapper(typeof(MappingProfiles)); // Đăng ký profile
+builder.Services.AddCors(options =>
+{
+    options.AddDefaultPolicy(builder =>
+    {
+        builder.WithOrigins("http://localhost:5173") // URL của ứng dụng React
+               .AllowAnyMethod()
+               .AllowAnyHeader()
+               .AllowCredentials();
+    });
+});
 
 // Thêm các dịch vụ repository và service
 builder.Services.AddScoped<IRoleRepository, RoleRepository>();
@@ -59,6 +72,9 @@ builder.Services.AddScoped<IPlaylistRepository, PlaylistRepository>();
 builder.Services.AddScoped<IPlaylistService, PlaylistService>();
 builder.Services.AddScoped<IPlaylistTrackRepository, PlaylistTrackRepository>();
 builder.Services.AddScoped<IPlaylistTrackService, PlaylistTrackService>();
+builder.Services.AddScoped<ITrackRepository, TrackRepository>();
+builder.Services.AddScoped<ITrackService, TrackService>();
+builder.Services.AddScoped<IDropboxService, DropboxService>();
 
 var app = builder.Build();
 
@@ -68,7 +84,7 @@ if (app.Environment.IsDevelopment())
     app.UseSwagger();
     app.UseSwaggerUI();
 }
-
+app.UseCors();
 app.UseHttpsRedirection();
 app.UseAuthentication();
 app.UseAuthorization();
