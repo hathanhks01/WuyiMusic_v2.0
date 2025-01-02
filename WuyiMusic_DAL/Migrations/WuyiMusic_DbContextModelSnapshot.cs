@@ -220,6 +220,23 @@ namespace WuyiMusic_DAL.Migrations
                     b.HasKey("RoleId");
 
                     b.ToTable("Roles");
+
+                    b.HasData(
+                        new
+                        {
+                            RoleId = new Guid("d1f4eaa0-1b2c-42e8-9ff7-ff6f983ae412"),
+                            RoleName = "admin"
+                        },
+                        new
+                        {
+                            RoleId = new Guid("94a3ea36-b30c-4ad8-8a9e-8262fb030fdc"),
+                            RoleName = "artist"
+                        },
+                        new
+                        {
+                            RoleId = new Guid("58de85c3-30d8-4f2c-940c-002c6bb214e2"),
+                            RoleName = "user"
+                        });
                 });
 
             modelBuilder.Entity("WuyiMusic_DAL.Models.Suggestion", b =>

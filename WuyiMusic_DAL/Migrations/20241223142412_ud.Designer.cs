@@ -12,7 +12,7 @@ using WuyiMusic_DAL.Models;
 namespace WuyiMusic_DAL.Migrations
 {
     [DbContext(typeof(WuyiMusic_DbContext))]
-    [Migration("20241221195944_ud")]
+    [Migration("20241223142412_ud")]
     partial class ud
     {
         /// <inheritdoc />

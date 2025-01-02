@@ -31,11 +31,11 @@ namespace WuyiMusic_API.Controllers
         }
 
         [HttpPost("login")]
-        public async Task<ActionResult<(User user, string token)>> Login(LoginDto loginDto)
+        public async Task<ActionResult<(User user, string token)>> Login(string userName, string passWord)
         {
             try
             {
-                var (user, token) = await _authService.LoginAsync(loginDto);
+                var (user, token) = await _authService.LoginAsync( userName,  passWord);
                 return Ok(new { User = user, Token = token });
             }
             catch (Exception ex)

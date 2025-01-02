@@ -12,8 +12,8 @@ using WuyiMusic_DAL.Models;
 namespace WuyiMusic_DAL.Migrations
 {
     [DbContext(typeof(WuyiMusic_DbContext))]
-    [Migration("20241221195551_Initialization")]
-    partial class Initialization
+    [Migration("20241222183442_khoi tao")]
+    partial class khoitao
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -227,17 +227,17 @@ namespace WuyiMusic_DAL.Migrations
                     b.HasData(
                         new
                         {
-                            RoleId = new Guid("fd8d03f3-5359-4a09-8270-c2b4fd2f55a3"),
+                            RoleId = new Guid("d1f4eaa0-1b2c-42e8-9ff7-ff6f983ae412"),
                             RoleName = "admin"
                         },
                         new
                         {
-                            RoleId = new Guid("f0f7d448-582c-4f77-bbc9-366cf602e294"),
+                            RoleId = new Guid("94a3ea36-b30c-4ad8-8a9e-8262fb030fdc"),
                             RoleName = "artist"
                         },
                         new
                         {
-                            RoleId = new Guid("07be34d9-67ff-4de9-a764-4b1275e3fc9c"),
+                            RoleId = new Guid("58de85c3-30d8-4f2c-940c-002c6bb214e2"),
                             RoleName = "user"
                         });
                 });
