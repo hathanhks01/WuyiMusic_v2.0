@@ -14,7 +14,11 @@ namespace WuyiMusic_DAL.Helper
         public MappingProfiles() 
         {
             CreateMap<RegisterDto, User>()
-                .ForMember(dest => dest.Password, opt => opt.Ignore()); 
+                .ForMember(dest => dest.Password, opt => opt.Ignore());
+
+            CreateMap<Playlist, PlaylistDto>(); /// Get
+            CreateMap<PlaylistDto, Playlist>(); /// Put and Post
+
         }
     }
 }

@@ -8,8 +8,8 @@ namespace WuyiMusic_DAL.DTOS
 {
     public class LyricsDto
     {
-        public int LyricsId { get; set; }
+        public Guid LyricsId { get; set; }
         public string Content { get; set; }
-        public int TrackId { get; set; }
+        public Guid TrackId { get; set; }
     }
 }

@@ -4,10 +4,11 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using WuyiMusic_DAL.DTOS;
+using WuyiMusic_DAL.Models;
 
-namespace WuyiMusic_DAL.Models
+namespace WuyiMusic_Services.IServices
 {
-    public interface ILyricsRepository
+    public interface ILyricsService
     {
         Task<IEnumerable<object>> GetAllLyrics();
         Task<object> GetByIdLyrics(Guid id);

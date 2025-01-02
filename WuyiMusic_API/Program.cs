@@ -62,8 +62,16 @@ builder.Services.AddCors(options =>
 
 // Thêm các dịch vụ repository và service
 builder.Services.AddScoped<IRoleRepository, RoleRepository>();
+builder.Services.AddScoped<ICommentRepository, CommentRepository>();
+builder.Services.AddScoped<ICommentService, CommentService>();
 builder.Services.AddScoped<IUserRepository, UserRepository>();
 builder.Services.AddScoped<IAuthService, AuthService>();
+builder.Services.AddScoped<ILyricsRepository, LyricsRepository>();
+builder.Services.AddScoped<ILyricsService, LyricsService>();
+builder.Services.AddScoped<IPlaylistRepository, PlaylistRepository>();
+builder.Services.AddScoped<IPlaylistService, PlaylistService>();
+builder.Services.AddScoped<IPlaylistTrackRepository, PlaylistTrackRepository>();
+builder.Services.AddScoped<IPlaylistTrackService, PlaylistTrackService>();
 builder.Services.AddScoped<ITrackRepository, TrackRepository>();
 builder.Services.AddScoped<ITrackService, TrackService>();
 builder.Services.AddScoped<IDropboxService, DropboxService>();
