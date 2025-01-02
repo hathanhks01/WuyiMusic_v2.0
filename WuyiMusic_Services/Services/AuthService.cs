@@ -62,10 +62,10 @@ namespace WuyiMusic_Services.Services
             return user;
         }
 
-        public async Task<(User user, string token)> LoginAsync(LoginDto loginDto)
+        public async Task<(User user, string token)> LoginAsync(string userName,string passWord )
         {
-            var user = await _context.Users.Include(u => u.UserRoles).ThenInclude(ur => ur.Role).SingleOrDefaultAsync(u => u.Username == loginDto.Username);
-            if (user == null || !VerifyPassword(loginDto.Password, user.Password))
+            var user = await _context.Users.Include(u => u.UserRoles).ThenInclude(ur => ur.Role).SingleOrDefaultAsync(u => u.Username == userName);
+            if (user == null || !VerifyPassword(passWord, user.Password))
             {
                 throw new Exception("Invalid username or password");
             }

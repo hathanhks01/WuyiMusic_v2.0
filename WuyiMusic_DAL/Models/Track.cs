@@ -18,24 +18,24 @@ namespace WuyiMusic_DAL.Models
         public string Title { get; set; }
 
         [Required] 
-        public TimeSpan Duration { get; set; }
+        public TimeSpan? Duration { get; set; }
 
         [ForeignKey("Album")]
         [Required]
-        public Guid AlbumId { get; set; }
-        public virtual Album Album { get; set; }
+        public Guid? AlbumId { get; set; }
+        public virtual Album? Album { get; set; }
 
         [ForeignKey("Artist")]
         [Required]
-        public Guid ArtistId { get; set; }
-        public virtual Artist Artist { get; set; }
+        public Guid? ArtistId { get; set; }
+        public virtual Artist? Artist { get; set; }
 
         public string FilePath { get; set; }
         public int Likes { get; set; }
 
-        public virtual ICollection<PlaylistTrack> PlaylistTracks { get; set; }
-        public virtual ICollection<Comment> Comments { get; set; }
-        public virtual ICollection<Rating> Ratings { get; set; }
-        public virtual ICollection<Lyrics> Lyrics { get; set; }
+        public virtual ICollection<PlaylistTrack>? PlaylistTracks { get; set; }
+        public virtual ICollection<Comment>? Comments { get; set; }
+        public virtual ICollection<Rating>? Ratings { get; set; }
+        public virtual ICollection<Lyrics>? Lyrics { get; set; }
     }
 }
