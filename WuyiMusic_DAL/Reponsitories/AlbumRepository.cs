@@ -19,7 +19,7 @@ namespace WuyiMusic_DAL.Reponsitories
             _context = context;
         }
 
-        public async Task<Album> AddComment(AlbumDto albumDto)
+        public async Task<Album> AddAlbum(AlbumDto albumDto)
         {
             var album = new Album
             {

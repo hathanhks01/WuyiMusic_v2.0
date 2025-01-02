@@ -6,9 +6,9 @@ using System.Threading.Tasks;
 using WuyiMusic_DAL.DTOS;
 using WuyiMusic_DAL.Models;
 
-namespace WuyiMusic_DAL.IReponsitories
+namespace WuyiMusic_Services.IServices
 {
-    public interface IAdvertisementRepository
+    public interface IAdvertisementService
     {
         Task<IEnumerable<object>> GetAllAdvertisement();
         Task<object> GetByIdAdvertisement(Guid id);

@@ -19,7 +19,7 @@ namespace WuyiMusic_DAL.Reponsitories
             _context = context;
         }
 
-        public async Task<Advertisement> AddLyrics(AdvertisementDto advertisementDto)
+        public async Task<Advertisement> AddAdvertisement(AdvertisementDto advertisementDto)
         {
             var advertisement = new Advertisement
             {
