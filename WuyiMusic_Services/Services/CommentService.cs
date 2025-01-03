@@ -1,4 +1,5 @@
-﻿using System;
+﻿using AutoMapper;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -13,13 +14,14 @@ namespace WuyiMusic_Services.Services
     public class CommentService : ICommentService
     {
         private readonly ICommentRepository _commentRepo;
-        public CommentService(ICommentRepository commentRepo)
+        private readonly IMapper _mapper;
+        public CommentService(ICommentRepository commentRepo, IMapper mapper)
         {
             _commentRepo = commentRepo;
+            _mapper = mapper;
         }
         public async Task<Comment> AddComment(CommentDto commentDto)
         {
-       
             return await _commentRepo.AddComment(commentDto);
         }
 

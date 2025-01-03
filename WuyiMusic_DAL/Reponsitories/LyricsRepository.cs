@@ -20,15 +20,15 @@ namespace WuyiMusic_DAL.Reponsitories
 
         public async Task<Lyrics> AddLyrics(LyricsDto lyricsDto)
         {
-            var comment = new Lyrics
+            var lyrics = new Lyrics
             {
                 LyricsId = Guid.NewGuid(),
                 TrackId = lyricsDto.TrackId,
                 Content = lyricsDto.Content,
             };
-            await _context.Lyrics.AddAsync(comment);
+            await _context.Lyrics.AddAsync(lyrics);
             _context.SaveChanges();
-            return comment;
+            return lyrics;
         }
 
         public Task DeleteLyrics(Guid id)
@@ -40,30 +40,30 @@ namespace WuyiMusic_DAL.Reponsitories
         {
             var result = await _context.Lyrics
             .Include(lr => lr.Track)
-                .ThenInclude(tr => tr.Album) 
+                .ThenInclude(tr => tr.Album)
             .Include(lr => lr.Track)
-                .ThenInclude(tr => tr.Artist) 
+                .ThenInclude(tr => tr.Artist)
             .Select(lr => new
             {
                 lr.LyricsId,
                 lr.Content,
-                Track = lr.Track != null ? new
+                Track = lr.Track == null ? null : new
                 {
                     lr.Track.TrackId,
                     lr.Track.Title,
                     lr.Track.Duration,
                     lr.Track.FilePath,
-                    Album = lr.Track.Album != null ? new
+                    Album = lr.Track.Album == null ? null : new
                     {
                         lr.Track.Album.AlbumId,
                         lr.Track.Album.Title
-                    } : null,
-                    Artist = lr.Track.Artist != null ? new
+                    },
+                    Artist = lr.Track.Artist == null ? null : new
                     {
                         lr.Track.Artist.ArtistId,
                         lr.Track.Artist.Name
-                    } : null
-                } : null,               
+                    }
+                }
             }).ToListAsync();
 
             return result;

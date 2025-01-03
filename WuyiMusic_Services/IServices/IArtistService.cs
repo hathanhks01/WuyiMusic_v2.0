@@ -6,9 +6,9 @@ using System.Threading.Tasks;
 using WuyiMusic_DAL.DTOS;
 using WuyiMusic_DAL.Models;
 
-namespace WuyiMusic_DAL.IReponsitories
+namespace WuyiMusic_Services.IServices
 {
-    public interface IArtistRepository
+    public interface IArtistService
     {
         Task<IEnumerable<object>> GetAllArtist();
         Task<object> GetByIdArtist(Guid id);
