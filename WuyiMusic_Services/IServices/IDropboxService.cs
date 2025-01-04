@@ -9,5 +9,6 @@ namespace WuyiMusic_Services.IServices
     public interface IDropboxService
     {
         Task UploadFileAsync(Stream fileStream, string fileName);
+        Task<string> CreateSharedLinkAsync(string path);
     }
 }

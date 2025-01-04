@@ -13,16 +13,16 @@ namespace WuyiMusic_DAL.Models
         public Guid ArtistId { get; set; } = Guid.NewGuid();
 
         [Required] 
-        public string Name { get; set; }
+        public string? Name { get; set; }
 
-        public string Bio { get; set; } 
+        public string? Bio { get; set; } 
 
-        public string ArtistImage { get; set; } 
+        public string? ArtistImage { get; set; } 
 
-        [Required] 
-        public DateTime CreatedAt { get; set; }
+       // [Required] 
+        public DateTime? CreatedAt { get; set; }
 
-        public virtual ICollection<Album> Albums { get; set; }
-        public virtual ICollection<Track> Tracks { get; set; }
+        public virtual ICollection<Album>? Albums { get; set; }
+        public virtual ICollection<Track>? Tracks { get; set; }
     }
 }

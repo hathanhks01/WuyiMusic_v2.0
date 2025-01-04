@@ -32,14 +32,18 @@ namespace WuyiMusic_Services.Services
 
         public async Task AddTrackAsync(Track track, IFormFile file)
         {
-            // Upload file lên Dropbox thông qua DropboxService
+            if (file == null || file.Length == 0)
+            {
+                throw new Exception("Tệp không hợp lệ.");
+            }
             using (var stream = file.OpenReadStream())
             {
+                // Tải tệp lên Dropbox với tên tệp
                 await _dropboxService.UploadFileAsync(stream, file.FileName);
             }
 
-            // Tạo đường dẫn đến file trên Dropbox
-            track.FilePath = $"https://www.dropbox.com/home/{file.FileName}"; // Đường dẫn đến file trên Dropbox
+        track.FilePath = "test";
+
 
             // Thêm track vào cơ sở dữ liệu
             await _trackRepository.AddAsync(track);

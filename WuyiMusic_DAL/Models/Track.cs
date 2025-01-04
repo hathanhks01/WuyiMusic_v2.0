@@ -15,7 +15,7 @@ namespace WuyiMusic_DAL.Models
         public Guid TrackId { get; set; } = Guid.NewGuid();
 
         [Required]
-        public string Title { get; set; }
+        public string? Title { get; set; }
 
         [Required] 
         public TimeSpan? Duration { get; set; }
@@ -30,8 +30,8 @@ namespace WuyiMusic_DAL.Models
         public Guid? ArtistId { get; set; }
         public virtual Artist? Artist { get; set; }
 
-        public string FilePath { get; set; }
-        public int Likes { get; set; }
+        public string? FilePath { get; set; }
+        public int? Likes { get; set; }
 
         public virtual ICollection<PlaylistTrack>? PlaylistTracks { get; set; }
         public virtual ICollection<Comment>? Comments { get; set; }
