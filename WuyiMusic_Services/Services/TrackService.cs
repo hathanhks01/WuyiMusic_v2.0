@@ -36,14 +36,13 @@ namespace WuyiMusic_Services.Services
             {
                 throw new Exception("Tệp không hợp lệ.");
             }
+
             using (var stream = file.OpenReadStream())
             {
-                // Tải tệp lên Dropbox với tên tệp
-                await _dropboxService.UploadFileAsync(stream, file.FileName);
+                // Tải tệp lên Dropbox và lấy thông tin tệp
+                var dropboxFileInfo = await _dropboxService.UploadFileAsyncWithPath(stream, file.FileName);
+                track.FilePath = dropboxFileInfo.Path; // Lưu đường dẫn vào Track
             }
-
-        track.FilePath = "test";
-
 
             // Thêm track vào cơ sở dữ liệu
             await _trackRepository.AddAsync(track);

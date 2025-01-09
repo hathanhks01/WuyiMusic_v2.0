@@ -20,7 +20,7 @@ namespace WuyiMusic_API.Controllers
         }
 
         // GET: api/track
-        [HttpGet]
+        [HttpGet("getAllTrack")]
         public async Task<ActionResult<IEnumerable<Track>>> GetAllTracks()
         {
             var tracks = await _trackService.GetAllAsync();

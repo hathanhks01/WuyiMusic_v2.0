@@ -14,19 +14,19 @@ namespace WuyiMusic_DAL.Models
         [Key]
         public Guid TrackId { get; set; } = Guid.NewGuid();
 
-        [Required]
         public string? Title { get; set; }
 
-        [Required] 
+       
         public TimeSpan? Duration { get; set; }
+        public string? TrackImage { get; set; }
 
         [ForeignKey("Album")]
-        [Required]
+     
         public Guid? AlbumId { get; set; }
         public virtual Album? Album { get; set; }
 
         [ForeignKey("Artist")]
-        [Required]
+     
         public Guid? ArtistId { get; set; }
         public virtual Artist? Artist { get; set; }
 
