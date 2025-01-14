@@ -8,6 +8,7 @@ using WuyiMusic_DAL.Models;
 using WuyiMusic_DAL.Reponsitories;
 using WuyiMusic_Services.IServices;
 using WuyiMusic_Services.Services;
+using static Dropbox.Api.TeamLog.EventCategory;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -74,7 +75,10 @@ builder.Services.AddScoped<IPlaylistTrackRepository, PlaylistTrackRepository>();
 builder.Services.AddScoped<IPlaylistTrackService, PlaylistTrackService>();
 builder.Services.AddScoped<ITrackRepository, TrackRepository>();
 builder.Services.AddScoped<ITrackService, TrackService>();
+builder.Services.AddScoped<IQueueRepository, QueueRepository>();
+builder.Services.AddScoped<IQueueService, QueueService>();
 builder.Services.AddScoped<IDropboxService, DropboxService>();
+
 
 var app = builder.Build();
 

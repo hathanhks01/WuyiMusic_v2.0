@@ -45,16 +45,29 @@ namespace WuyiMusic_API.Controllers
                 {
                     await file.CopyToAsync(stream);
                     stream.Position = 0; // Reset the stream position to the beginning
+
+                    // Kiểm tra kích thước của stream
+                    if (stream.Length == 0)
+                    {
+                        return BadRequest("Tệp rỗng không thể upload.");
+                    }
+
                     await _dropboxService.UploadFileAsync(stream, file.FileName);
                 }
                 return Ok("Upload thành công.");
             }
+            catch (HttpRequestException httpEx)
+            {
+                _logger.LogError($"HTTP error uploading file: {httpEx.Message}");
+                return StatusCode(500, "Đã xảy ra lỗi HTTP khi upload tệp: " + httpEx.Message);
+            }
             catch (Exception ex)
             {
                 _logger.LogError($"Error uploading file: {ex.Message}");
-                return StatusCode(500, "Đã xảy ra lỗi khi upload tệp.");
+                return StatusCode(500, "Đã xảy ra lỗi khi upload tệp: " + ex.Message);
             }
         }
+
 
         [HttpPost("get-token")]
         public async Task<IActionResult> GetToken([FromBody] DropboxAuthRequest authRequest)

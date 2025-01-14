@@ -11,6 +11,8 @@ namespace WuyiMusic_Services.IServices
     {
         Task UploadFileAsync(Stream fileStream, string fileName);
         Task<DropboxFileInfo> UploadFileAsyncWithPath(Stream fileStream, string fileName);
+        Task<string> GetSharedLinkAsync(string fileName);
         Task<string> RefreshTokenAsync();
+        Task<string> GetPermanentSharedLinkAsync(string fileName);
     }
 }

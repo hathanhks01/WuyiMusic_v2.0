@@ -32,6 +32,48 @@ namespace WuyiMusic_Services.Services
 
         public async Task UploadFileAsync(Stream fileStream, string fileName)
         {
+            if (fileStream.CanSeek)
+            {
+                fileStream.Position = 0;
+            }
+            if (fileStream.Length == 0)
+            {
+                throw new Exception("File stream is empty");
+            }
+            using (var memoryStream = new MemoryStream())
+            {
+                await fileStream.CopyToAsync(memoryStream);
+                memoryStream.Position = 0;  
+                var request = CreateUploadRequest(memoryStream, fileName);
+                var response = await httpClient.SendAsync(request);
+                if (response.StatusCode == System.Net.HttpStatusCode.Unauthorized)
+                {
+                    var newTokenResponse = await RefreshTokenAsync();
+                    var newTokenData = JsonConvert.DeserializeObject<Dictionary<string, string>>(newTokenResponse);
+                    accessToken = newTokenData["access_token"];
+                    // Reset stream position for retry
+                    memoryStream.Position = 0;
+                    // Retry with new token
+                    request = CreateUploadRequest(memoryStream, fileName);
+                    request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
+                    response = await httpClient.SendAsync(request);
+                }
+
+                if (!response.IsSuccessStatusCode)
+                {
+                    var errorMessage = await response.Content.ReadAsStringAsync();
+                    throw new Exception($"Dropbox upload failed: {errorMessage}");
+                }
+            }
+        }
+
+        private HttpRequestMessage CreateUploadRequest(Stream fileStream, string fileName)
+        {
+            if (!fileStream.CanRead)
+            {
+                throw new Exception("Cannot read from the provided stream.");
+            }
+
             var request = new HttpRequestMessage(HttpMethod.Post, "https://content.dropboxapi.com/2/files/upload");
             request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
 
@@ -45,47 +87,13 @@ namespace WuyiMusic_Services.Services
 
             request.Headers.Add("Dropbox-API-Arg", JsonConvert.SerializeObject(dropboxApiArg));
 
-            if (fileStream.Length == 0)
-            {
-                throw new Exception("Tệp rỗng không thể upload.");
-            }
+            // Create new StreamContent from the stream
+            var streamContent = new StreamContent(fileStream);
+            streamContent.Headers.ContentType = new MediaTypeHeaderValue("application/octet-stream");
+            request.Content = streamContent;
 
-            request.Content = new StreamContent(fileStream);
-            request.Content.Headers.ContentType = new MediaTypeHeaderValue("application/octet-stream");
-
-            var response = await httpClient.SendAsync(request);
-
-            // Nếu access token hết hạn (401), thử làm mới token và thử lại
-            if (!response.IsSuccessStatusCode)
-            {
-                var errorMessage = await response.Content.ReadAsStringAsync();
-
-                // Kiểm tra nếu là lỗi do access token hết hạn (401)
-                if (response.StatusCode == System.Net.HttpStatusCode.Unauthorized)
-                {
-                    // Làm mới token
-                    var newAccessTokenResponse = await RefreshTokenAsync();
-                    var newAccessTokenData = JsonConvert.DeserializeObject<Dictionary<string, string>>(newAccessTokenResponse);
-                    accessToken = newAccessTokenData["access_token"]; // Cập nhật access token mới
-
-                    // Gửi lại yêu cầu với access token mới
-                    request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
-                    response = await httpClient.SendAsync(request);
-
-                    // Nếu lần này không thành công thì ném lỗi
-                    if (!response.IsSuccessStatusCode)
-                    {
-                        throw new Exception($"Lỗi từ Dropbox: {await response.Content.ReadAsStringAsync()}");
-                    }
-                }
-                else
-                {
-                    throw new Exception($"Lỗi từ Dropbox: {errorMessage}");
-                }
-            }
+            return request;
         }
-
-
 
         public async Task<string> RefreshTokenAsync()
         {
@@ -167,31 +175,107 @@ namespace WuyiMusic_Services.Services
             };
         }
 
-        private HttpRequestMessage CreateUploadRequest(Stream fileStream, string fileName)
+        
+        public async Task<string> GetSharedLinkAsync(string fileName)
         {
-            var request = new HttpRequestMessage(HttpMethod.Post, "https://content.dropboxapi.com/2/files/upload");
+            var request = new HttpRequestMessage(HttpMethod.Post, "https://api.dropboxapi.com/2/files/get_temporary_link");
+            request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
+
+            var dropboxApiArg = new
+            {
+                path = $"/WuyiMusic_Track/{fileName}"
+            };
+
+            request.Content = new StringContent(JsonConvert.SerializeObject(dropboxApiArg), Encoding.UTF8, "application/json");
+
+            var response = await httpClient.SendAsync(request);
+
+            if (!response.IsSuccessStatusCode)
+            {
+                var errorMessage = await response.Content.ReadAsStringAsync();
+                throw new Exception($"Lỗi từ Dropbox: {errorMessage}");
+            }
+
+            var responseBody = await response.Content.ReadAsStringAsync();
+            dynamic jsonResponse = JsonConvert.DeserializeObject(responseBody);
+            return jsonResponse.link; 
+        }
+        public async Task<string> GetPermanentSharedLinkAsync(string fileName)
+        {
+            // Kiểm tra xem liên kết đã tồn tại chưa
+            var existingLink = await GetExistingSharedLinkAsync(fileName);
+            if (!string.IsNullOrEmpty(existingLink))
+            {
+                return existingLink; // Trả về liên kết đã tồn tại
+            }
+
+            // Nếu không có liên kết, tạo liên kết mới
+            var request = new HttpRequestMessage(HttpMethod.Post, "https://api.dropboxapi.com/2/sharing/create_shared_link_with_settings");
             request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
 
             var dropboxApiArg = new
             {
                 path = $"/WuyiMusic_Track/{fileName}",
-                mode = "overwrite",
-                autorename = true,
-                mute = false
+                settings = new
+                {
+                    requested_visibility = "public" // Thiết lập quyền truy cập công khai
+                }
             };
 
-            request.Headers.Add("Dropbox-API-Arg", JsonConvert.SerializeObject(dropboxApiArg));
+            request.Content = new StringContent(JsonConvert.SerializeObject(dropboxApiArg), Encoding.UTF8, "application/json");
 
-            if (fileStream.Length == 0)
+            var response = await httpClient.SendAsync(request);
+
+            if (!response.IsSuccessStatusCode)
             {
-                throw new Exception("Tệp rỗng không thể upload.");
+                var errorMessage = await response.Content.ReadAsStringAsync();
+                throw new Exception($"Lỗi từ Dropbox: {errorMessage}");
             }
 
-            request.Content = new StreamContent(fileStream);
-            request.Content.Headers.ContentType = new MediaTypeHeaderValue("application/octet-stream");
+            var responseBody = await response.Content.ReadAsStringAsync();
+            dynamic jsonResponse = JsonConvert.DeserializeObject(responseBody);
+            string sharedLink = jsonResponse.url;
 
-            return request;
+            // Chuyển đổi liên kết chia sẻ thành liên kết có thể phát
+            string audioLink = sharedLink.Replace("?dl=0", "?raw=1");
+
+            return audioLink; // Trả về liên kết có thể phát
         }
+
+
+        private async Task<string> GetExistingSharedLinkAsync(string fileName)
+        {
+            var request = new HttpRequestMessage(HttpMethod.Post, "https://api.dropboxapi.com/2/sharing/list_shared_links");
+            request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
+
+            var dropboxApiArg = new
+            {
+                path = $"/WuyiMusic_Track/{fileName}",
+                direct_only = true // Chỉ lấy liên kết trực tiếp
+            };
+
+            request.Content = new StringContent(JsonConvert.SerializeObject(dropboxApiArg), Encoding.UTF8, "application/json");
+
+            var response = await httpClient.SendAsync(request);
+
+            if (response.IsSuccessStatusCode)
+            {
+                var responseBody = await response.Content.ReadAsStringAsync();
+                dynamic jsonResponse = JsonConvert.DeserializeObject(responseBody);
+                if (jsonResponse.links.Count > 0)
+                {
+                    // Kiểm tra xem url có phải là chuỗi không
+                    var link = jsonResponse.links[0].url;
+                    if (link is string urlString)
+                    {
+                        return urlString.Replace("?dl=0", "?raw=1");
+                    }
+                }
+            }
+
+            return null; // Không có liên kết nào tồn tại
+        }
+
 
 
     }

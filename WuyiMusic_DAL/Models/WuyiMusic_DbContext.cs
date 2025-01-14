@@ -26,6 +26,9 @@ namespace WuyiMusic_DAL.Models
         public DbSet<Suggestion> Suggestions { get; set; }
         public DbSet<Advertisement> Advertisements { get; set; }
         public DbSet<Lyrics> Lyrics { get; set; }
+        public DbSet<Queue> Queues { get; set; }
+        public DbSet<QueueItem> QueueItems { get; set; }
+        public DbSet<PlayHistory> PlayHistories { get; set; }
         public WuyiMusic_DbContext(DbContextOptions options) : base(options)
         {
         }     
@@ -195,6 +198,17 @@ namespace WuyiMusic_DAL.Models
                 .HasOne(ur => ur.Role)
                 .WithMany(r => r.UserRoles)
                 .HasForeignKey(ur => ur.RoleId)
+                .OnDelete(DeleteBehavior.Cascade);
+            // Cấu hình index cho Position trong QueueItem
+            modelBuilder.Entity<QueueItem>()
+                .HasIndex(qi => new { qi.QueueId, qi.Position })
+                .IsUnique();
+
+            // Cấu hình cascade delete
+            modelBuilder.Entity<Queue>()
+                .HasMany(q => q.QueueItems)
+                .WithOne(qi => qi.Queue)
+                .HasForeignKey(qi => qi.QueueId)
                 .OnDelete(DeleteBehavior.Cascade);
         }
     }

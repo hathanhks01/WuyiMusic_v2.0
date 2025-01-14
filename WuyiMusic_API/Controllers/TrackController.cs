@@ -66,6 +66,7 @@ namespace WuyiMusic_API.Controllers
             {
                 TrackId = Guid.NewGuid(),
                 Title = trackDto.Title,
+                TrackImage=trackDto.TrackImage,
                 Duration = duration, 
                 AlbumId = trackDto.AlbumId,
                 ArtistId = trackDto.ArtistId,

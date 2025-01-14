@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using WuyiMusic_DAL.Models;
 
@@ -11,9 +12,11 @@ using WuyiMusic_DAL.Models;
 namespace WuyiMusic_DAL.Migrations
 {
     [DbContext(typeof(WuyiMusic_DbContext))]
-    partial class WuyiMusic_DbContextModelSnapshot : ModelSnapshot
+    [Migration("20250111161408_Queue")]
+    partial class Queue
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -51,9 +54,6 @@ namespace WuyiMusic_DAL.Migrations
                     b.Property<Guid?>("ArtistId")
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<Guid>("GenreId")
-                        .HasColumnType("uniqueidentifier");
-
                     b.Property<DateTime?>("ReleaseDate")
                         .HasColumnType("datetime2");
 
@@ -63,8 +63,6 @@ namespace WuyiMusic_DAL.Migrations
                     b.HasKey("AlbumId");
 
                     b.HasIndex("ArtistId");
-
-                    b.HasIndex("GenreId");
 
                     b.ToTable("Albums");
                 });
@@ -119,25 +117,6 @@ namespace WuyiMusic_DAL.Migrations
                     b.HasIndex("UserId");
 
                     b.ToTable("Comments");
-                });
-
-            modelBuilder.Entity("WuyiMusic_DAL.Models.Genre", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<string>("Description")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("Name")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.HasKey("Id");
-
-                    b.ToTable("Genre");
                 });
 
             modelBuilder.Entity("WuyiMusic_DAL.Models.Lyrics", b =>
@@ -479,15 +458,7 @@ namespace WuyiMusic_DAL.Migrations
                         .HasForeignKey("ArtistId")
                         .OnDelete(DeleteBehavior.Restrict);
 
-                    b.HasOne("WuyiMusic_DAL.Models.Genre", "Genre")
-                        .WithMany("Albums")
-                        .HasForeignKey("GenreId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
                     b.Navigation("Artist");
-
-                    b.Navigation("Genre");
                 });
 
             modelBuilder.Entity("WuyiMusic_DAL.Models.Comment", b =>
@@ -689,11 +660,6 @@ namespace WuyiMusic_DAL.Migrations
                     b.Navigation("Albums");
 
                     b.Navigation("Tracks");
-                });
-
-            modelBuilder.Entity("WuyiMusic_DAL.Models.Genre", b =>
-                {
-                    b.Navigation("Albums");
                 });
 
             modelBuilder.Entity("WuyiMusic_DAL.Models.Playlist", b =>

@@ -23,6 +23,9 @@ namespace WuyiMusic_DAL.Models
        // [Required] 
         public Guid? ArtistId { get; set; }
         public virtual Artist? Artist { get; set; }
+        [ForeignKey("Genre")]
+        public Guid GenreId { get; set; }
+        public Genre Genre { get; set; }
 
         public virtual ICollection<Track>? Tracks { get; set; }
     }

@@ -40,8 +40,11 @@ namespace WuyiMusic_Services.Services
             using (var stream = file.OpenReadStream())
             {
                 // Tải tệp lên Dropbox và lấy thông tin tệp
-                var dropboxFileInfo = await _dropboxService.UploadFileAsyncWithPath(stream, file.FileName);
-                track.FilePath = dropboxFileInfo.Path; // Lưu đường dẫn vào Track
+                     await _dropboxService.UploadFileAsync(stream, file.FileName);
+                var sharedLink = await _dropboxService.GetSharedLinkAsync(file.FileName);
+
+                // Lưu đường dẫn chia sẻ vào Track
+                track.FilePath = sharedLink;
             }
 
             // Thêm track vào cơ sở dữ liệu
