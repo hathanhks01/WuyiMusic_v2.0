@@ -61,10 +61,22 @@ builder.Services.AddCors(options =>
 });
 
 // Thêm các dịch vụ repository và service
-builder.Services.AddScoped<IRoleRepository, RoleRepository>();
 builder.Services.AddScoped<ICommentRepository, CommentRepository>();
 builder.Services.AddScoped<ICommentService, CommentService>();
+builder.Services.AddScoped<IAdvertisementRepository, AdvertisementRepository>();
+builder.Services.AddScoped<IAdvertisementService, AdvertisementService>();
+builder.Services.AddScoped<IAlbumRepository, AlbumRepository>();
+builder.Services.AddScoped<IAlbumService, AlbumService>();
+builder.Services.AddScoped<IArtistRepository, ArtistRepository>();
+builder.Services.AddScoped<IArtistService, ArtistService>();
+builder.Services.AddScoped<IRatingRepository, RatingRepository>();
+builder.Services.AddScoped<IRatingService, RatingService>();
+builder.Services.AddScoped<ISuggestionRepository, SuggestionRepository>();
+builder.Services.AddScoped<ISuggestionService, SuggestionService>();
+builder.Services.AddScoped<IUserRoleRepository, UserRoleRepository>();
+builder.Services.AddScoped<IUserRoleService, UserRoleService>();
 builder.Services.AddScoped<IUserRepository, UserRepository>();
+builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<ILyricsRepository, LyricsRepository>();
 builder.Services.AddScoped<ILyricsService, LyricsService>();

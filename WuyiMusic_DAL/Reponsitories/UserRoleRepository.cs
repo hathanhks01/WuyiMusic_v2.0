@@ -4,12 +4,13 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using WuyiMusic_DAL.DTOS;
 using WuyiMusic_DAL.IReponsitories;
 using WuyiMusic_DAL.Models;
 
 namespace WuyiMusic_DAL.Reponsitories
 {
-    internal class UserRoleRepository : IUserRoleRepository
+    public class UserRoleRepository : IUserRoleRepository
     {
         private readonly WuyiMusic_DbContext _context;
 
@@ -18,51 +19,81 @@ namespace WuyiMusic_DAL.Reponsitories
             _context = context;
         }
 
-        public async Task<IEnumerable<UserRole>> GetAllAsync()
+        public async Task<UserRole> AddUserRole(UserRoleDto userRoleDto)
         {
-            return await _context.UserRoles.ToListAsync();
-        }
-
-        public async Task<UserRole> GetByIdAsync(Guid id)
-        {
-            return await _context.UserRoles.FindAsync(id);
-        }
-
-        public async Task AddAsync(UserRole userRole)
-        {
-            await _context.UserRoles.AddAsync(userRole);
-            await _context.SaveChangesAsync();
-        }
-
-        public async Task UpdateAsync(UserRole userRole)
-        {
-            _context.UserRoles.Update(userRole);
-            await _context.SaveChangesAsync();
-        }
-
-        public async Task DeleteAsync(Guid id)
-        {
-            var userRole = await GetByIdAsync(id);
-            if (userRole != null)
+            var userRoles = new UserRole
             {
-                _context.UserRoles.Remove(userRole);
-                await _context.SaveChangesAsync();
-            }
+                Id = Guid.NewGuid(),
+                UserId = userRoleDto.UserId,
+                RoleId = userRoleDto.RoleId,
+            };
+            await _context.UserRoles.AddAsync(userRoles);
+            _context.SaveChanges();
+            return userRoles;
         }
 
-        public async Task<IEnumerable<Role>> GetRolesByUserIdAsync(Guid userId)
+        public Task DeleteUserRole(Guid id)
         {
-            return await _context.UserRoles
-        .Where(ur => ur.UserId == userId)
-        .Select(ur => ur.Role)
-        .ToListAsync();
+            throw new NotImplementedException();
         }
 
-        public async Task AddRoleToUserAsync(Guid userId, Guid roleId)
+        public async Task<IEnumerable<object>> GetAllUserRole()
         {
-            var userRole = new UserRole { UserId = userId, RoleId = roleId };
-            await _context.UserRoles.AddAsync(userRole);
+            var result = await _context.UserRoles
+                .Include(usrl => usrl.User)
+                .Include(usrl => usrl.Role)
+                .Select(usrl => new
+                {
+                    usrl.Id,
+                    User = usrl.User == null ? null : new
+                    {
+                        usrl.UserId,
+                        usrl.User.Username,
+                        usrl.User.Email
+                    },
+                    Role = usrl.Role == null ? null : new
+                    {
+                        usrl.RoleId,
+                        usrl.Role.RoleName  
+                    }
+                }).ToListAsync();
+
+            return result;
+        }
+
+        public async Task<object> GetByIdUserRole(Guid id)
+        {
+            var result = await _context.UserRoles.Where(usrl => usrl.Id == id).Select(usrl => new
+            {
+                usrl.Id,
+                User = usrl.User == null ? null : new
+                {
+                    usrl.UserId,
+                    usrl.User.Username,
+                    usrl.User.Email
+                },
+                Role = usrl.Role == null ? null : new
+                {
+                    usrl.RoleId,
+                    usrl.Role.RoleName
+                }
+            }).FirstOrDefaultAsync(); ;
+            return result;
+        }
+
+        public async Task<UserRole> UpdateUserRole(UserRoleDto userRoleDto)
+        {
+            if (userRoleDto == null) throw new ArgumentNullException(nameof(userRoleDto));
+
+            var existingUserRole = await _context.UserRoles
+                .FirstOrDefaultAsync(usrl => usrl.Id == userRoleDto.Id);
+
+            if (existingUserRole == null) throw new InvalidOperationException("UserRole không tồn tại.");
+
+            existingUserRole.UserId = userRoleDto.UserId;
+            existingUserRole.RoleId = userRoleDto.RoleId;
             await _context.SaveChangesAsync();
+            return existingUserRole;
         }
     }
 }

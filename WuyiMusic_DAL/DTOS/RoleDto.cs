@@ -9,6 +9,6 @@ namespace WuyiMusic_DAL.DTOS
     public class RoleDto
     {
         public Guid RoleId { get; set; }
-        public string Name { get; set; }
+        public string RoleName { get; set; }
     }
 }
