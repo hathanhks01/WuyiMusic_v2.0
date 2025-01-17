@@ -5,6 +5,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using WuyiMusic_DAL.DTOS;
+using WuyiMusic_DAL.IReponsitories;
 using WuyiMusic_DAL.Models;
 
 namespace WuyiMusic_DAL.Reponsitories
