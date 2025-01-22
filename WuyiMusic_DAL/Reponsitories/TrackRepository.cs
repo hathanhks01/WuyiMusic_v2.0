@@ -49,6 +49,13 @@ namespace WuyiMusic_DAL.Reponsitories
                 await _context.SaveChangesAsync();
             }
         }
+        public async Task<IEnumerable<Track>> GetFavoriteTracksAsync(Guid userId)
+        {
+            return await _context.UserFavoriteTracks
+                .Where(uf => uf.UserId == userId)
+                .Select(uf => uf.Track)
+                .ToListAsync();
+        }
     }
 
 }

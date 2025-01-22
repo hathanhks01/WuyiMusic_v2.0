@@ -38,6 +38,20 @@ namespace WuyiMusic_API.Controllers
             }
             return Ok(track);
         }
+        // GET: api/track/Favorite?userId={userId}
+        [HttpGet("Favorite")]
+        public async Task<ActionResult<IEnumerable<Track>>> GetFavoriteTracks(Guid userId)
+        {
+            var tracks = await _trackService.GetFavoriteTracksAsync(userId);
+
+            if (tracks == null || !tracks.Any())
+            {
+                return NotFound();
+            }
+
+            return Ok(tracks);
+        }
+
 
         // POST: api/track/addtrack
         [HttpPost("addtrack")]
@@ -70,7 +84,8 @@ namespace WuyiMusic_API.Controllers
                 Duration = duration, 
                 AlbumId = trackDto.AlbumId,
                 ArtistId = trackDto.ArtistId,
-                FilePath = trackDto.File.FileName 
+                FilePath = trackDto.File.FileName ,
+                Likes = trackDto.Likes,
             };
 
             await _trackService.AddTrackAsync(track, trackDto.File);

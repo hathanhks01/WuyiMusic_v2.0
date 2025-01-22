@@ -2,6 +2,7 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
+using WuyiMusic_BLL.Services;
 using WuyiMusic_DAL.Helper;
 using WuyiMusic_DAL.IReponsitories;
 using WuyiMusic_DAL.Models;
@@ -78,6 +79,8 @@ builder.Services.AddScoped<ITrackService, TrackService>();
 builder.Services.AddScoped<IQueueRepository, QueueRepository>();
 builder.Services.AddScoped<IQueueService, QueueService>();
 builder.Services.AddScoped<IDropboxService, DropboxService>();
+builder.Services.AddScoped<IFavoriteTrackRepository, FavoriteTrackRepository>();
+builder.Services.AddScoped<IFavoriteTrackService, FavoriteTrackService>();
 
 
 var app = builder.Build();

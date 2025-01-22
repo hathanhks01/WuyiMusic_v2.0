@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using WuyiMusic_DAL.Models.WuyiMusic_DAL.Models;
 
 namespace WuyiMusic_DAL.Models
 {
@@ -29,6 +30,7 @@ namespace WuyiMusic_DAL.Models
         public DbSet<Queue> Queues { get; set; }
         public DbSet<QueueItem> QueueItems { get; set; }
         public DbSet<PlayHistory> PlayHistories { get; set; }
+        public DbSet<UserFavoriteTrack> UserFavoriteTracks { get; set; }
         public WuyiMusic_DbContext(DbContextOptions options) : base(options)
         {
         }     

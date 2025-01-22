@@ -41,7 +41,7 @@ namespace WuyiMusic_Services.Services
             {
                 // Tải tệp lên Dropbox và lấy thông tin tệp
                      await _dropboxService.UploadFileAsync(stream, file.FileName);
-                var sharedLink = await _dropboxService.GetSharedLinkAsync(file.FileName);
+                var sharedLink = await _dropboxService.GetPermanentSharedLinkAsync(file.FileName);
 
                 // Lưu đường dẫn chia sẻ vào Track
                 track.FilePath = sharedLink;
@@ -60,5 +60,10 @@ namespace WuyiMusic_Services.Services
         {
             await _trackRepository.DeleteAsync(id);
         }
+        public async Task<IEnumerable<Track>> GetFavoriteTracksAsync(Guid userId)
+        {
+            return await _trackRepository.GetFavoriteTracksAsync(userId);
+        }
+
     }
 }

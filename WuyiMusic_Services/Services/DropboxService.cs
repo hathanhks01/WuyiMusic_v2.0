@@ -202,44 +202,72 @@ namespace WuyiMusic_Services.Services
         }
         public async Task<string> GetPermanentSharedLinkAsync(string fileName)
         {
-            // Kiểm tra xem liên kết đã tồn tại chưa
-            var existingLink = await GetExistingSharedLinkAsync(fileName);
-            if (!string.IsNullOrEmpty(existingLink))
+            try
             {
-                return existingLink; // Trả về liên kết đã tồn tại
-            }
-
-            // Nếu không có liên kết, tạo liên kết mới
-            var request = new HttpRequestMessage(HttpMethod.Post, "https://api.dropboxapi.com/2/sharing/create_shared_link_with_settings");
-            request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
-
-            var dropboxApiArg = new
-            {
-                path = $"/WuyiMusic_Track/{fileName}",
-                settings = new
+                // Kiểm tra xem liên kết đã tồn tại chưa
+                var existingLink = await GetExistingSharedLinkAsync(fileName);
+                if (!string.IsNullOrEmpty(existingLink))
                 {
-                    requested_visibility = "public" // Thiết lập quyền truy cập công khai
+                    return existingLink; // Trả về liên kết đã tồn tại
                 }
-            };
 
-            request.Content = new StringContent(JsonConvert.SerializeObject(dropboxApiArg), Encoding.UTF8, "application/json");
+                // Nếu không có liên kết, tạo liên kết mới
+                var request = new HttpRequestMessage(HttpMethod.Post, "https://api.dropboxapi.com/2/sharing/create_shared_link_with_settings");
+                request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
 
-            var response = await httpClient.SendAsync(request);
+                var dropboxApiArg = new
+                {
+                    path = $"/WuyiMusic_Track/{fileName}",
+                    settings = new
+                    {
+                        requested_visibility = "public", // Thiết lập quyền truy cập công khai
+                        audience = "public",
+                        access = "viewer", // Chỉ cho phép xem
+                        allow_download = true // Cho phép tải xuống để có thể phát trực tiếp
+                    }
+                };
 
-            if (!response.IsSuccessStatusCode)
-            {
-                var errorMessage = await response.Content.ReadAsStringAsync();
-                throw new Exception($"Lỗi từ Dropbox: {errorMessage}");
+                request.Content = new StringContent(JsonConvert.SerializeObject(dropboxApiArg), Encoding.UTF8, "application/json");
+
+                var response = await httpClient.SendAsync(request);
+
+                // Kiểm tra và refresh token nếu cần
+                if (response.StatusCode == System.Net.HttpStatusCode.Unauthorized)
+                {
+                    var newTokenResponse = await RefreshTokenAsync();
+                    var newTokenData = JsonConvert.DeserializeObject<Dictionary<string, string>>(newTokenResponse);
+                    accessToken = newTokenData["access_token"];
+
+                    // Tạo lại request với token mới
+                    request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
+                    response = await httpClient.SendAsync(request);
+                }
+
+                if (!response.IsSuccessStatusCode)
+                {
+                    var errorMessage = await response.Content.ReadAsStringAsync();
+                    throw new Exception($"Lỗi từ Dropbox: {errorMessage}");
+                }
+
+                var responseBody = await response.Content.ReadAsStringAsync();
+                dynamic jsonResponse = JsonConvert.DeserializeObject(responseBody);
+
+                // Lấy URL từ response và chuyển đổi thành định dạng dl=1
+                string sharedLink = jsonResponse.url;
+
+                // Chuyển đổi URL để có thể phát trực tiếp
+                // Thay đổi www.dropbox.com thành dl.dropboxusercontent.com để có link trực tiếp
+                string directLink = sharedLink
+                    .Replace("www.dropbox.com", "dl.dropboxusercontent.com")
+                    .Replace("?dl=0", "")
+                    .Replace("&dl=0", "");
+
+                return directLink;
             }
-
-            var responseBody = await response.Content.ReadAsStringAsync();
-            dynamic jsonResponse = JsonConvert.DeserializeObject(responseBody);
-            string sharedLink = jsonResponse.url;
-
-            // Chuyển đổi liên kết chia sẻ thành liên kết có thể phát
-            string audioLink = sharedLink.Replace("?dl=0", "?raw=1");
-
-            return audioLink; // Trả về liên kết có thể phát
+            catch (Exception ex)
+            {
+                throw new Exception($"Lỗi khi tạo shared link: {ex.Message}");
+            }
         }
 
 

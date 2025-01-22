@@ -15,5 +15,6 @@ namespace WuyiMusic_Services.IServices
         Task AddTrackAsync(Track track, IFormFile file);
         Task UpdateAsync(Track track);
         Task DeleteAsync(Guid id);
+        Task<IEnumerable<Track>> GetFavoriteTracksAsync(Guid userId);
     }
 }
