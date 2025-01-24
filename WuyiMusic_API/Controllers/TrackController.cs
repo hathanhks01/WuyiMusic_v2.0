@@ -85,7 +85,7 @@ namespace WuyiMusic_API.Controllers
                 AlbumId = trackDto.AlbumId,
                 ArtistId = trackDto.ArtistId,
                 FilePath = trackDto.File.FileName ,
-                Likes = trackDto.Likes,
+                Likes = 0,
             };
 
             await _trackService.AddTrackAsync(track, trackDto.File);

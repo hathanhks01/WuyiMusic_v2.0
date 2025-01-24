@@ -16,7 +16,6 @@ namespace WuyiMusic_DAL.Models
 
         public string? Title { get; set; }
 
-       
         public TimeSpan? Duration { get; set; }
         public string? TrackImage { get; set; }
 
@@ -32,6 +31,8 @@ namespace WuyiMusic_DAL.Models
 
         public string? FilePath { get; set; }
         public int? Likes { get; set; }
+        public int? ListenCount { get; set; } = 0; // Số lượt nghe
+        public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
         public virtual ICollection<PlaylistTrack>? PlaylistTracks { get; set; }
         public virtual ICollection<Comment>? Comments { get; set; }

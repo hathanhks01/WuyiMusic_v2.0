@@ -18,7 +18,6 @@ namespace WuyiMusic_DAL.DTOS
 
         public Guid? ArtistId { get; set; }
 
-        public int Likes { get; set; }
         [Required]
         public IFormFile File { get; set; }
     }

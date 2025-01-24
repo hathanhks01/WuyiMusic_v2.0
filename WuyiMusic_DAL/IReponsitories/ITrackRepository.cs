@@ -15,5 +15,6 @@ namespace WuyiMusic_DAL.IReponsitories
         Task UpdateAsync(Track track);
         Task DeleteAsync(Guid id);
         Task<IEnumerable<Track>> GetFavoriteTracksAsync(Guid userId);
+
     }
 }
