@@ -21,21 +21,28 @@ namespace WuyiMusic_Services.Services
         private readonly WuyiMusic_DbContext _context;
         private readonly IMapper _mapper;
         private readonly string _jwtSecret;
+        private readonly string _issuer;
+        private readonly string _audience;
 
         public AuthService(WuyiMusic_DbContext context, IMapper mapper, IConfiguration configuration)
         {
             _context = context;
             _mapper = mapper;
             _jwtSecret = configuration["JwtSettings:Secret"];
+            _issuer = configuration["JwtSettings:ValidIssuer"];
+            _audience = configuration["JwtSettings:ValidAudience"];
         }
-
+        public async Task<bool> CheckEmailAsync(string email)
+        {
+            return await _context.Users.AnyAsync(u => u.Email == email);
+        }
         public async Task<User> RegisterAsync(RegisterDto registerDto)
         {
-            if (await _context.Users.AnyAsync(u => u.Email == registerDto.Email))
+            bool emailExists = await CheckEmailAsync(registerDto.Email);
+            if (emailExists)
             {
                 throw new Exception("Email already exists");
             }
-
             var user = _mapper.Map<User>(registerDto);
             user.Password = HashPassword(registerDto.Password);
             user.Email = registerDto.Email;
@@ -84,6 +91,7 @@ namespace WuyiMusic_Services.Services
         {
             var claims = new[]
             {
+            new Claim(ClaimTypes.NameIdentifier, user.UserId.ToString()),
             new Claim(JwtRegisteredClaimNames.Sub, user.Username),
             new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
         };
@@ -92,13 +100,29 @@ namespace WuyiMusic_Services.Services
             var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
 
             var token = new JwtSecurityToken(
-                issuer: null,
-                audience: null,
+                issuer: _issuer,
+                audience: _audience,
                 claims: claims,
                 expires: DateTime.Now.AddDays(7),
                 signingCredentials: creds);
 
             return new JwtSecurityTokenHandler().WriteToken(token);
+        }
+        public async Task<User> GetCurrentUserAsync(ClaimsPrincipal userClaims)
+        {
+            var userId = userClaims.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (string.IsNullOrEmpty(userId))
+            {
+                throw new UnauthorizedAccessException("User not authenticated");
+            }
+
+            var user = await _context.Users
+                .Include(u => u.UserRoles)
+                    .ThenInclude(ur => ur.Role)
+                .Include(u => u.Artist)
+                .FirstOrDefaultAsync(u => u.UserId == Guid.Parse(userId));
+
+            return user ?? throw new UnauthorizedAccessException("User not found");
         }
     }
     }

@@ -14,6 +14,14 @@ public class QueueController : ControllerBase
         _logger = logger;
     }
 
+
+    [HttpPost("create")]
+    public async Task<IActionResult> CreateRandomQueue(Guid userId, Guid initialTrackId, int numberOfTracks = 50)
+    {
+        var queue = await _queueService.CreateRandomQueue(userId, initialTrackId, numberOfTracks);
+        return Ok(queue);
+    }
+
     /// <summary>
     /// Lấy bài hát hiện tại đang phát
     /// </summary>
@@ -215,6 +223,65 @@ public class QueueController : ControllerBase
         }
         return userId;
     }
+    [HttpGet("details")]
+    [ProducesResponseType(typeof(QueueDetailsResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<QueueDetailsResponse>> GetQueueDetails()
+    {
+        try
+        {
+            var userId = GetCurrentUserId();
+            var queue = await _queueService.GetQueueWithItems(userId);
+
+            if (queue == null)
+                return NotFound("Không tìm thấy hàng đợi");
+
+            var currentTrack = await _queueService.GetCurrentTrack(userId);
+
+            var response = new QueueDetailsResponse
+            {
+                CurrentTrack = currentTrack,
+                IsShuffled = queue.IsShuffled,
+                IsRepeated = queue.IsRepeated,
+                QueueItems = queue.QueueItems?
+                    .OrderBy(qi => queue.IsShuffled ? qi.Position : qi.OriginalPosition)
+                    .Select(qi => new QueueItemResponse
+                    {
+                        TrackId = qi.TrackId,
+                        Track = qi.Track,
+                        Position = queue.IsShuffled ? qi.Position : qi.OriginalPosition,
+                        AddedAt = qi.AddedAt
+                    })
+                    .ToList() ?? new List<QueueItemResponse>()
+            };
+
+            return Ok(response);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Lỗi khi lấy thông tin hàng đợi");
+            return StatusCode(500, "Đã có lỗi xảy ra khi lấy thông tin hàng đợi");
+        }
+    }
+
+
+}
+
+
+public class QueueDetailsResponse
+{
+    public Track CurrentTrack { get; set; }
+    public bool IsShuffled { get; set; }
+    public bool IsRepeated { get; set; }
+    public List<QueueItemResponse> QueueItems { get; set; }
+}
+
+public class QueueItemResponse
+{
+    public Guid TrackId { get; set; }
+    public Track Track { get; set; }
+    public int Position { get; set; }
+    public DateTime AddedAt { get; set; }
 }
 
 public class ReorderQueueRequest

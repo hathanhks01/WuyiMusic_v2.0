@@ -125,11 +125,49 @@ namespace WuyiMusic_API.Controllers
         }
 
 
+        [HttpGet("GetInternalPathFromSharedLinkAsync")]
+        public async Task<IActionResult> GetInternalPathFromSharedLinkAsync([FromQuery] string sharedLink)
+        {
+            var internalPath = await _dropboxService.GetInternalPathFromSharedLinkAsync(sharedLink);
+            return Ok(internalPath); // Trả về dữ liệu với HTTP 200
+        }
+
+        [HttpDelete("deletefile")]
+        public async Task<IActionResult> DeleteFileAsync([FromQuery] string sharedLink)
+        {
+            try
+            {
+                if (string.IsNullOrEmpty(sharedLink))
+                {
+                    return BadRequest("Shared link không được để trống");
+                }
+
+                // Lấy internal path từ shared link
+                var internalPath = await _dropboxService.GetInternalPathFromSharedLinkAsync(sharedLink);
+
+                if (string.IsNullOrEmpty(internalPath))
+                {
+                    return BadRequest("Không thể lấy được đường dẫn file từ shared link");
+                }
+
+                // Xóa file sử dụng internal path
+                await _dropboxService.DeleteFileFromDropboxAsync(internalPath);
+
+                return Ok(new { message = "File đã được xóa thành công", path = internalPath });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = $"Lỗi khi xóa file: {ex.Message}" });
+            }
+        }
+
+
 
         // DTO for the token request
         public class DropboxAuthRequest
         {
             public string AccessCode { get; set; }
         }
+
     }
 }

@@ -8,24 +8,22 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace WuyiMusic_DAL.Migrations
 {
     /// <inheritdoc />
-    public partial class a : Migration
+    public partial class initialization : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.CreateTable(
-                name: "Artists",
+                name: "Genres",
                 columns: table => new
                 {
-                    ArtistId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     Name = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    Bio = table.Column<string>(type: "nvarchar(max)", nullable: true),
-                    ArtistImage = table.Column<string>(type: "nvarchar(max)", nullable: true),
-                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: true)
+                    Description = table.Column<string>(type: "nvarchar(max)", nullable: true)
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_Artists", x => x.ArtistId);
+                    table.PrimaryKey("PK_Genres", x => x.Id);
                 });
 
             migrationBuilder.CreateTable(
@@ -58,26 +56,6 @@ namespace WuyiMusic_DAL.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "Albums",
-                columns: table => new
-                {
-                    AlbumId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    Title = table.Column<string>(type: "nvarchar(max)", nullable: true),
-                    ReleaseDate = table.Column<DateTime>(type: "datetime2", nullable: true),
-                    ArtistId = table.Column<Guid>(type: "uniqueidentifier", nullable: true)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_Albums", x => x.AlbumId);
-                    table.ForeignKey(
-                        name: "FK_Albums_Artists_ArtistId",
-                        column: x => x.ArtistId,
-                        principalTable: "Artists",
-                        principalColumn: "ArtistId",
-                        onDelete: ReferentialAction.Restrict);
-                });
-
-            migrationBuilder.CreateTable(
                 name: "Advertisements",
                 columns: table => new
                 {
@@ -94,6 +72,29 @@ namespace WuyiMusic_DAL.Migrations
                         principalTable: "Users",
                         principalColumn: "UserId",
                         onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "Artists",
+                columns: table => new
+                {
+                    ArtistId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    Name = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    Bio = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    ArtistImage = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    MetaLink = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    IsVerified = table.Column<bool>(type: "bit", nullable: true),
+                    UserId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
+                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Artists", x => x.ArtistId);
+                    table.ForeignKey(
+                        name: "FK_Artists_Users_UserId",
+                        column: x => x.UserId,
+                        principalTable: "Users",
+                        principalColumn: "UserId");
                 });
 
             migrationBuilder.CreateTable(
@@ -142,17 +143,40 @@ namespace WuyiMusic_DAL.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "Albums",
+                columns: table => new
+                {
+                    AlbumId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    Title = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    ReleaseDate = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    ArtistId = table.Column<Guid>(type: "uniqueidentifier", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Albums", x => x.AlbumId);
+                    table.ForeignKey(
+                        name: "FK_Albums_Artists_ArtistId",
+                        column: x => x.ArtistId,
+                        principalTable: "Artists",
+                        principalColumn: "ArtistId",
+                        onDelete: ReferentialAction.Restrict);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "Tracks",
                 columns: table => new
                 {
                     TrackId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     Title = table.Column<string>(type: "nvarchar(max)", nullable: true),
-                    Duration = table.Column<TimeSpan>(type: "time", nullable: true),
+                    Duration = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     TrackImage = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     AlbumId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
                     ArtistId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
+                    MetaLink = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     FilePath = table.Column<string>(type: "nvarchar(max)", nullable: true),
-                    Likes = table.Column<int>(type: "int", nullable: true)
+                    Likes = table.Column<int>(type: "int", nullable: true),
+                    ListenCount = table.Column<int>(type: "int", nullable: true),
+                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -218,6 +242,34 @@ namespace WuyiMusic_DAL.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "PlayHistories",
+                columns: table => new
+                {
+                    HistoryId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    UserId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    TrackId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    PlayedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    PlayDuration = table.Column<TimeSpan>(type: "time", nullable: true),
+                    IsCompleted = table.Column<bool>(type: "bit", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_PlayHistories", x => x.HistoryId);
+                    table.ForeignKey(
+                        name: "FK_PlayHistories_Tracks_TrackId",
+                        column: x => x.TrackId,
+                        principalTable: "Tracks",
+                        principalColumn: "TrackId",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_PlayHistories_Users_UserId",
+                        column: x => x.UserId,
+                        principalTable: "Users",
+                        principalColumn: "UserId",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "PlaylistTracks",
                 columns: table => new
                 {
@@ -240,6 +292,34 @@ namespace WuyiMusic_DAL.Migrations
                         principalTable: "Tracks",
                         principalColumn: "TrackId",
                         onDelete: ReferentialAction.Restrict);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "Queues",
+                columns: table => new
+                {
+                    QueueId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    UserId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    CurrentTrackId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
+                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    IsShuffled = table.Column<bool>(type: "bit", nullable: false),
+                    IsRepeated = table.Column<bool>(type: "bit", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Queues", x => x.QueueId);
+                    table.ForeignKey(
+                        name: "FK_Queues_Tracks_CurrentTrackId",
+                        column: x => x.CurrentTrackId,
+                        principalTable: "Tracks",
+                        principalColumn: "TrackId");
+                    table.ForeignKey(
+                        name: "FK_Queues_Users_UserId",
+                        column: x => x.UserId,
+                        principalTable: "Users",
+                        principalColumn: "UserId",
+                        onDelete: ReferentialAction.Cascade);
                 });
 
             migrationBuilder.CreateTable(
@@ -293,6 +373,83 @@ namespace WuyiMusic_DAL.Migrations
                         onDelete: ReferentialAction.Restrict);
                 });
 
+            migrationBuilder.CreateTable(
+                name: "TrackGenres",
+                columns: table => new
+                {
+                    TrackId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    GenreId = table.Column<Guid>(type: "uniqueidentifier", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_TrackGenres", x => new { x.TrackId, x.GenreId });
+                    table.ForeignKey(
+                        name: "FK_TrackGenres_Genres_GenreId",
+                        column: x => x.GenreId,
+                        principalTable: "Genres",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_TrackGenres_Tracks_TrackId",
+                        column: x => x.TrackId,
+                        principalTable: "Tracks",
+                        principalColumn: "TrackId",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "UserFavoriteTracks",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    UserId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    TrackId = table.Column<Guid>(type: "uniqueidentifier", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_UserFavoriteTracks", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_UserFavoriteTracks_Tracks_TrackId",
+                        column: x => x.TrackId,
+                        principalTable: "Tracks",
+                        principalColumn: "TrackId",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_UserFavoriteTracks_Users_UserId",
+                        column: x => x.UserId,
+                        principalTable: "Users",
+                        principalColumn: "UserId",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "QueueItems",
+                columns: table => new
+                {
+                    QueueItemId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    QueueId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    TrackId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    Position = table.Column<int>(type: "int", nullable: false),
+                    OriginalPosition = table.Column<int>(type: "int", nullable: false),
+                    AddedAt = table.Column<DateTime>(type: "datetime2", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_QueueItems", x => x.QueueItemId);
+                    table.ForeignKey(
+                        name: "FK_QueueItems_Queues_QueueId",
+                        column: x => x.QueueId,
+                        principalTable: "Queues",
+                        principalColumn: "QueueId",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_QueueItems_Tracks_TrackId",
+                        column: x => x.TrackId,
+                        principalTable: "Tracks",
+                        principalColumn: "TrackId",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
             migrationBuilder.InsertData(
                 table: "Roles",
                 columns: new[] { "RoleId", "RoleName" },
@@ -314,6 +471,13 @@ namespace WuyiMusic_DAL.Migrations
                 column: "ArtistId");
 
             migrationBuilder.CreateIndex(
+                name: "IX_Artists_UserId",
+                table: "Artists",
+                column: "UserId",
+                unique: true,
+                filter: "[UserId] IS NOT NULL");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_Comments_TrackId",
                 table: "Comments",
                 column: "TrackId");
@@ -329,6 +493,16 @@ namespace WuyiMusic_DAL.Migrations
                 column: "TrackId");
 
             migrationBuilder.CreateIndex(
+                name: "IX_PlayHistories_TrackId",
+                table: "PlayHistories",
+                column: "TrackId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_PlayHistories_UserId",
+                table: "PlayHistories",
+                column: "UserId");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_Playlists_UserId",
                 table: "Playlists",
                 column: "UserId");
@@ -342,6 +516,27 @@ namespace WuyiMusic_DAL.Migrations
                 name: "IX_PlaylistTracks_TrackId",
                 table: "PlaylistTracks",
                 column: "TrackId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_QueueItems_QueueId_Position",
+                table: "QueueItems",
+                columns: new[] { "QueueId", "Position" },
+                unique: true);
+
+            migrationBuilder.CreateIndex(
+                name: "IX_QueueItems_TrackId",
+                table: "QueueItems",
+                column: "TrackId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Queues_CurrentTrackId",
+                table: "Queues",
+                column: "CurrentTrackId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Queues_UserId",
+                table: "Queues",
+                column: "UserId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_Ratings_TrackId",
@@ -364,6 +559,11 @@ namespace WuyiMusic_DAL.Migrations
                 column: "UserId");
 
             migrationBuilder.CreateIndex(
+                name: "IX_TrackGenres_GenreId",
+                table: "TrackGenres",
+                column: "GenreId");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_Tracks_AlbumId",
                 table: "Tracks",
                 column: "AlbumId");
@@ -372,6 +572,16 @@ namespace WuyiMusic_DAL.Migrations
                 name: "IX_Tracks_ArtistId",
                 table: "Tracks",
                 column: "ArtistId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_UserFavoriteTracks_TrackId",
+                table: "UserFavoriteTracks",
+                column: "TrackId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_UserFavoriteTracks_UserId",
+                table: "UserFavoriteTracks",
+                column: "UserId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_UserRoles_RoleId",
@@ -397,7 +607,13 @@ namespace WuyiMusic_DAL.Migrations
                 name: "Lyrics");
 
             migrationBuilder.DropTable(
+                name: "PlayHistories");
+
+            migrationBuilder.DropTable(
                 name: "PlaylistTracks");
+
+            migrationBuilder.DropTable(
+                name: "QueueItems");
 
             migrationBuilder.DropTable(
                 name: "Ratings");
@@ -406,25 +622,37 @@ namespace WuyiMusic_DAL.Migrations
                 name: "Suggestions");
 
             migrationBuilder.DropTable(
+                name: "TrackGenres");
+
+            migrationBuilder.DropTable(
+                name: "UserFavoriteTracks");
+
+            migrationBuilder.DropTable(
                 name: "UserRoles");
 
             migrationBuilder.DropTable(
                 name: "Playlists");
 
             migrationBuilder.DropTable(
-                name: "Tracks");
+                name: "Queues");
+
+            migrationBuilder.DropTable(
+                name: "Genres");
 
             migrationBuilder.DropTable(
                 name: "Roles");
 
             migrationBuilder.DropTable(
-                name: "Users");
+                name: "Tracks");
 
             migrationBuilder.DropTable(
                 name: "Albums");
 
             migrationBuilder.DropTable(
                 name: "Artists");
+
+            migrationBuilder.DropTable(
+                name: "Users");
         }
     }
 }

@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Newtonsoft.Json;
 using WuyiMusic_DAL.DTOS;
 using WuyiMusic_DAL.Models;
 using WuyiMusic_Services.IServices;
@@ -16,13 +17,33 @@ namespace WuyiMusic_API.Controllers
         {
             _artistSer = artistSer;
         }
+        // GET: api/artist/{userId}
+        [HttpGet("user/{userId}")]
+        public async Task<ActionResult<Artist>> GetArtistByUserId(Guid userId)
+        {
+            var artist = await _artistSer.GetArtistByUserIdAsync(userId);
 
+            if (artist == null)
+            {
+                return NotFound("Artist not found for the specified user.");
+            }
+
+            return Ok(artist);
+        }
         [HttpGet]
         public async Task<ActionResult<IEnumerable<Artist>>> GetAllArtist()
         {
             var aritists = await _artistSer.GetAllArtist();
             return Ok(aritists);
         }
+        [HttpGet]
+        [Route("random")]
+        public async Task<ActionResult<IEnumerable<Artist>>> GetRandomArtist()
+        {
+            var artists = await _artistSer.GetRandomArtistsAsync();
+            return Ok(artists);
+        }
+
 
         [HttpGet("{id}")]
         public async Task<ActionResult<Artist>> GetArtistById(Guid id)
@@ -35,12 +56,13 @@ namespace WuyiMusic_API.Controllers
             return Ok(aritists);
         }
 
-        [HttpPost]
-        public async Task<ActionResult<Artist>> CreateArtist(ArtistDto artistDto)
+        [HttpPost("CreateArtist")]
+        public async Task<ActionResult<Artist>> CreateArtist([FromForm] ArtistDto artistDto, [FromQuery] Guid userId)
         {
-            await _artistSer.AddArtist(artistDto);
+            await _artistSer.AddArtist(artistDto, userId);
             return CreatedAtAction(nameof(GetArtistById), new { id = artistDto.ArtistId }, artistDto);
         }
+
 
         [HttpPut("{id}")]
         public async Task<IActionResult> UpdateArtist(Guid id, ArtistDto artistDto)

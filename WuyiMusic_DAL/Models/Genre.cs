@@ -1,18 +1,10 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using WuyiMusic_DAL.Models;
 
-namespace WuyiMusic_DAL.Models
+public class Genre
 {
-    public class Genre
-    {
-        public Guid Id { get; set; }
-        public string Name { get; set; }
-        public string Description { get; set; }
-
-        // Navigation property
-        public ICollection<Album> Albums { get; set; }
-    }
+    public Guid Id { get; set; } = Guid.NewGuid();
+    public string Name { get; set; }
+    public string? Description { get; set; }=string.Empty;
+    // Navigation property
+    public virtual ICollection<TrackGenre>? TrackGenres { get; set; }
 }

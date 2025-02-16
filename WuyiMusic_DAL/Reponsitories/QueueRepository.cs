@@ -1,9 +1,4 @@
 ﻿using Microsoft.EntityFrameworkCore;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using WuyiMusic_DAL.IReponsitories;
 using WuyiMusic_DAL.Models;
 
@@ -18,6 +13,58 @@ namespace WuyiMusic_DAL.Reponsitories
             _context = context;
         }
 
+        public async Task<Queue> CreateRandomQueue(Guid userId, Guid initialTrackId, int numberOfTracks = 50)
+        {
+            // Tạo queue mới
+            var queue = new Queue
+            {
+                UserId = userId,
+                CurrentTrackId = initialTrackId,
+                IsShuffled = true,
+                CreatedAt = DateTime.UtcNow
+            };
+
+            await _context.Set<Queue>().AddAsync(queue);
+
+            // Lấy danh sách track ngẫu nhiên, loại trừ track hiện tại
+            var randomTracks = await _context.Set<Track>()
+                .Where(t => t.TrackId != initialTrackId)
+                .OrderBy(r => Guid.NewGuid()) // Sắp xếp ngẫu nhiên
+                .Take(numberOfTracks - 1)
+                .ToListAsync();
+
+            // Thêm track hiện tại vào vị trí đầu tiên
+            var queueItems = new List<QueueItem>
+        {
+            new QueueItem
+            {
+                QueueId = queue.QueueId,
+                TrackId = initialTrackId,
+                Position = 0,
+                OriginalPosition = 0,
+                AddedAt = DateTime.UtcNow
+            }
+        };
+
+            // Thêm các track ngẫu nhiên vào queue
+            for (int i = 0; i < randomTracks.Count; i++)
+            {
+                queueItems.Add(new QueueItem
+                {
+                    QueueId = queue.QueueId,
+                    TrackId = randomTracks[i].TrackId,
+                    Position = i + 1,
+                    OriginalPosition = i + 1,
+                    AddedAt = DateTime.UtcNow
+                });
+            }
+
+            await _context.Set<QueueItem>().AddRangeAsync(queueItems);
+            await _context.SaveChangesAsync();
+
+            return queue;
+        }
+
         public async Task<Queue> CreateQueue(Queue queue)
         {
             _context.Queues.Add(queue);
@@ -29,6 +76,8 @@ namespace WuyiMusic_DAL.Reponsitories
         {
             return await _context.Queues
                 .Include(q => q.CurrentTrack)
+                    .ThenInclude(t => t.TrackGenres)
+                        .ThenInclude(tg => tg.Genre)
                 .FirstOrDefaultAsync(q => q.UserId == userId);
         }
 
@@ -36,12 +85,18 @@ namespace WuyiMusic_DAL.Reponsitories
         {
             return await _context.Queues
                 .Include(q => q.QueueItems)
+                    .ThenInclude(qi => qi.Track)
+                        .ThenInclude(t => t.TrackGenres)
+                            .ThenInclude(tg => tg.Genre)
                 .FirstOrDefaultAsync(q => q.UserId == userId);
         }
 
         public async Task<List<PlayHistory>> GetPlayHistory(Guid userId, DateTime startDate, DateTime endDate)
         {
             return await _context.PlayHistories
+                .Include(h => h.Track)
+                    .ThenInclude(t => t.TrackGenres)
+                        .ThenInclude(tg => tg.Genre)
                 .Where(h => h.UserId == userId &&
                            h.PlayedAt >= startDate &&
                            h.PlayedAt <= endDate)
@@ -51,8 +106,11 @@ namespace WuyiMusic_DAL.Reponsitories
         public async Task<List<Track>> GetPopularTracksByGenres(List<Guid> genreIds, int limit)
         {
             return await _context.Tracks
+                .Include(t => t.TrackGenres)
+                    .ThenInclude(tg => tg.Genre)
                 .Include(t => t.Album)
-                .Where(t => genreIds.Contains(t.Album.GenreId))
+                .Include(t => t.Artist)
+                .Where(t => t.TrackGenres.Any(tg => genreIds.Contains(tg.GenreId)))
                 .OrderByDescending(t => t.Likes)
                 .Take(limit)
                 .ToListAsync();
@@ -60,15 +118,18 @@ namespace WuyiMusic_DAL.Reponsitories
 
         public async Task<List<Guid>> GetFavoriteGenres(Guid userId, int limit)
         {
-            return await _context.PlayHistories
+            var playedTracks = await _context.PlayHistories
                 .Where(h => h.UserId == userId && h.IsCompleted)
                 .Include(h => h.Track)
-                .ThenInclude(t => t.Album)
-                .GroupBy(h => h.Track.Album.GenreId)
+                    .ThenInclude(t => t.TrackGenres)
+                .SelectMany(h => h.Track.TrackGenres.Select(tg => tg.GenreId))
+                .GroupBy(genreId => genreId)
                 .OrderByDescending(g => g.Count())
                 .Take(limit)
                 .Select(g => g.Key)
                 .ToListAsync();
+
+            return playedTracks;
         }
 
         public async Task AddQueueItem(QueueItem queueItem)

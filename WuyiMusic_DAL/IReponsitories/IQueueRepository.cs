@@ -18,5 +18,6 @@ namespace WuyiMusic_DAL.IReponsitories
         Task AddQueueItem(QueueItem queueItem);
         Task UpdateQueue(Queue queue);
         Task SavePlayHistory(PlayHistory history);
+        Task<Queue> CreateRandomQueue(Guid userId, Guid initialTrackId, int numberOfTracks = 50);
     }
 }

@@ -25,6 +25,7 @@ namespace WuyiMusic_DAL.Models
 
         [Required]
         public int Position { get; set; }  // Vị trí trong queue
+        public int OriginalPosition { get; set; }
 
         public DateTime AddedAt { get; set; } = DateTime.UtcNow;
     }

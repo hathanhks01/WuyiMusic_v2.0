@@ -36,5 +36,6 @@ namespace WuyiMusic_DAL.Models
         public virtual ICollection<Comment>? Comments { get; set; }
         public virtual ICollection<Rating>? Ratings { get; set; }
         public virtual ICollection<Suggestion>? Suggestions { get; set; }
+        public virtual Artist? Artist { get; set; }
     }
 }

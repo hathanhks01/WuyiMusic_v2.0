@@ -1,0 +1,17 @@
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+using WuyiMusic_DAL.Models;
+
+
+namespace WuyiMusic_DAL.IReponsitories
+{
+    public interface IGenreRepository
+    {
+        Task<IEnumerable<Genre>> GetAllGenres();
+        Task<Genre> AddGenre(Genre genre);
+        Task DeleteGenre(Guid id);
+    }
+}

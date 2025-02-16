@@ -1,9 +1,4 @@
 ﻿using Microsoft.EntityFrameworkCore;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using WuyiMusic_DAL.Models.WuyiMusic_DAL.Models;
 
 namespace WuyiMusic_DAL.Models
@@ -12,8 +7,8 @@ namespace WuyiMusic_DAL.Models
     {
         public WuyiMusic_DbContext()
         {
-            
         }
+
         public DbSet<User> Users { get; set; }
         public DbSet<UserRole> UserRoles { get; set; }
         public DbSet<Role> Roles { get; set; }
@@ -31,9 +26,12 @@ namespace WuyiMusic_DAL.Models
         public DbSet<QueueItem> QueueItems { get; set; }
         public DbSet<PlayHistory> PlayHistories { get; set; }
         public DbSet<UserFavoriteTrack> UserFavoriteTracks { get; set; }
+        public DbSet<Genre> Genres { get; set; }
+        public DbSet<TrackGenre> TrackGenres { get; set; }
+
         public WuyiMusic_DbContext(DbContextOptions options) : base(options)
         {
-        }     
+        }
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
@@ -44,12 +42,33 @@ namespace WuyiMusic_DAL.Models
         {
             base.OnModelCreating(modelBuilder);
 
+            // TrackGenre configurations
+            modelBuilder.Entity<TrackGenre>(entity =>
+            {
+                entity.HasKey(tg => new { tg.TrackId, tg.GenreId });
+
+                entity.HasOne(tg => tg.Track)
+                    .WithMany(t => t.TrackGenres)
+                    .HasForeignKey(tg => tg.TrackId)
+                    .OnDelete(DeleteBehavior.Cascade);
+
+                entity.HasOne(tg => tg.Genre)
+                    .WithMany(g => g.TrackGenres)
+                    .HasForeignKey(tg => tg.GenreId)
+                    .OnDelete(DeleteBehavior.Cascade);
+            });
+
             // Advertisement configurations
             modelBuilder.Entity<Advertisement>()
                 .HasOne(a => a.User)
                 .WithMany()
                 .HasForeignKey(a => a.UserId)
                 .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<User>()
+               .HasOne(u => u.Artist)
+               .WithOne(a => a.User)
+               .HasForeignKey<Artist>(a => a.UserId);
 
             // Album configurations
             modelBuilder.Entity<Album>()
@@ -62,7 +81,7 @@ namespace WuyiMusic_DAL.Models
                 .HasMany(a => a.Tracks)
                 .WithOne(t => t.Album)
                 .HasForeignKey(t => t.AlbumId)
-                .OnDelete(DeleteBehavior.Cascade);
+                .OnDelete(DeleteBehavior.SetNull);
 
             // Artist configurations
             modelBuilder.Entity<Artist>()
@@ -75,7 +94,7 @@ namespace WuyiMusic_DAL.Models
                 .HasMany(artist => artist.Tracks)
                 .WithOne(track => track.Artist)
                 .HasForeignKey(track => track.ArtistId)
-                .OnDelete(DeleteBehavior.Restrict);
+                .OnDelete(DeleteBehavior.SetNull);
 
             // Comment configurations
             modelBuilder.Entity<Comment>()
@@ -121,7 +140,7 @@ namespace WuyiMusic_DAL.Models
                 .HasOne(pt => pt.Track)
                 .WithMany(t => t.PlaylistTracks)
                 .HasForeignKey(pt => pt.TrackId)
-                .OnDelete(DeleteBehavior.Restrict);
+                .OnDelete(DeleteBehavior.Cascade);
 
             // Rating configurations
             modelBuilder.Entity<Rating>()
@@ -142,13 +161,13 @@ namespace WuyiMusic_DAL.Models
                 .WithOne(ur => ur.Role)
                 .HasForeignKey(ur => ur.RoleId)
                 .OnDelete(DeleteBehavior.Cascade);
-            // add data base for role
+
+            // Role seed data
             modelBuilder.Entity<Role>().HasData(
                new Role { RoleId = Guid.Parse("d1f4eaa0-1b2c-42e8-9ff7-ff6f983ae412"), RoleName = "admin" },
                new Role { RoleId = Guid.Parse("94a3ea36-b30c-4ad8-8a9e-8262fb030fdc"), RoleName = "artist" },
                new Role { RoleId = Guid.Parse("58de85c3-30d8-4f2c-940c-002c6bb214e2"), RoleName = "user" }
-           );
-
+            );
 
             // Suggestion configurations
             modelBuilder.Entity<Suggestion>()
@@ -161,20 +180,20 @@ namespace WuyiMusic_DAL.Models
                 .HasOne(s => s.Track)
                 .WithMany()
                 .HasForeignKey(s => s.TrackId)
-                .OnDelete(DeleteBehavior.Restrict);
+                .OnDelete(DeleteBehavior.Cascade);
 
             // Track configurations
             modelBuilder.Entity<Track>()
                 .HasOne(t => t.Album)
                 .WithMany(a => a.Tracks)
                 .HasForeignKey(t => t.AlbumId)
-                .OnDelete(DeleteBehavior.Restrict);
+                .OnDelete(DeleteBehavior.SetNull);
 
             modelBuilder.Entity<Track>()
                 .HasOne(t => t.Artist)
                 .WithMany(artist => artist.Tracks)
                 .HasForeignKey(t => t.ArtistId)
-                .OnDelete(DeleteBehavior.Restrict);
+                .OnDelete(DeleteBehavior.SetNull);
 
             // User configurations
             modelBuilder.Entity<User>()
@@ -201,17 +220,23 @@ namespace WuyiMusic_DAL.Models
                 .WithMany(r => r.UserRoles)
                 .HasForeignKey(ur => ur.RoleId)
                 .OnDelete(DeleteBehavior.Cascade);
-            // Cấu hình index cho Position trong QueueItem
+
+            // QueueItem configurations
             modelBuilder.Entity<QueueItem>()
                 .HasIndex(qi => new { qi.QueueId, qi.Position })
                 .IsUnique();
 
-            // Cấu hình cascade delete
             modelBuilder.Entity<Queue>()
                 .HasMany(q => q.QueueItems)
                 .WithOne(qi => qi.Queue)
                 .HasForeignKey(qi => qi.QueueId)
                 .OnDelete(DeleteBehavior.Cascade);
+                modelBuilder.Entity<Queue>()
+                .HasOne(q => q.CurrentTrack)
+                .WithMany()
+                .HasForeignKey(q => q.CurrentTrackId)
+                .OnDelete(DeleteBehavior.SetNull);
+
         }
     }
 }

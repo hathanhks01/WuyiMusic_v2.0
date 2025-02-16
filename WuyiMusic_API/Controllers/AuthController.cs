@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using WuyiMusic_DAL.DTOS;
 using WuyiMusic_DAL.Models;
 using WuyiMusic_Services.IServices;
@@ -14,6 +15,25 @@ namespace WuyiMusic_API.Controllers
         public AuthController(IAuthService authService)
         {
             _authService = authService;
+        }
+
+        [HttpGet("current-user")]
+        [Authorize] 
+        public async Task<ActionResult<User>> GetCurrentUser()
+        {
+            try
+            {
+                var user = await _authService.GetCurrentUserAsync(User);
+                return Ok(user);
+            }
+            catch (UnauthorizedAccessException ex)
+            {
+                return Unauthorized(ex.Message);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
         }
 
         [HttpPost("register")]
@@ -43,5 +63,13 @@ namespace WuyiMusic_API.Controllers
                 return BadRequest(ex.Message);
             }
         }
+        [HttpGet]
+        [Route("CheckEmailExists")]
+        public async Task<IActionResult> CheckEmailAsync(string email)
+        {
+            var emailExists = await _authService.CheckEmailAsync(email);
+            return Ok(new { available = !emailExists });
+        }
+
     }
 }

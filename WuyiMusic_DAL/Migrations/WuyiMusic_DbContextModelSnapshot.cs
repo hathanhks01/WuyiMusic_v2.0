@@ -22,6 +22,24 @@ namespace WuyiMusic_DAL.Migrations
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
 
+            modelBuilder.Entity("Genre", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Description")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("Genres");
+                });
+
             modelBuilder.Entity("WuyiMusic_DAL.Models.Advertisement", b =>
                 {
                     b.Property<Guid>("AdvertisementId")
@@ -51,9 +69,6 @@ namespace WuyiMusic_DAL.Migrations
                     b.Property<Guid?>("ArtistId")
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<Guid>("GenreId")
-                        .HasColumnType("uniqueidentifier");
-
                     b.Property<DateTime?>("ReleaseDate")
                         .HasColumnType("datetime2");
 
@@ -63,8 +78,6 @@ namespace WuyiMusic_DAL.Migrations
                     b.HasKey("AlbumId");
 
                     b.HasIndex("ArtistId");
-
-                    b.HasIndex("GenreId");
 
                     b.ToTable("Albums");
                 });
@@ -84,11 +97,24 @@ namespace WuyiMusic_DAL.Migrations
                     b.Property<DateTime?>("CreatedAt")
                         .HasColumnType("datetime2");
 
+                    b.Property<bool?>("IsVerified")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("MetaLink")
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<Guid?>("UserId")
+                        .HasColumnType("uniqueidentifier");
+
                     b.HasKey("ArtistId");
+
+                    b.HasIndex("UserId")
+                        .IsUnique()
+                        .HasFilter("[UserId] IS NOT NULL");
 
                     b.ToTable("Artists");
                 });
@@ -119,25 +145,6 @@ namespace WuyiMusic_DAL.Migrations
                     b.HasIndex("UserId");
 
                     b.ToTable("Comments");
-                });
-
-            modelBuilder.Entity("WuyiMusic_DAL.Models.Genre", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<string>("Description")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("Name")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.HasKey("Id");
-
-                    b.ToTable("Genre");
                 });
 
             modelBuilder.Entity("WuyiMusic_DAL.Models.Lyrics", b =>
@@ -276,6 +283,9 @@ namespace WuyiMusic_DAL.Migrations
                     b.Property<DateTime>("AddedAt")
                         .HasColumnType("datetime2");
 
+                    b.Property<int>("OriginalPosition")
+                        .HasColumnType("int");
+
                     b.Property<int>("Position")
                         .HasColumnType("int");
 
@@ -387,8 +397,8 @@ namespace WuyiMusic_DAL.Migrations
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
 
-                    b.Property<TimeSpan?>("Duration")
-                        .HasColumnType("time");
+                    b.Property<string>("Duration")
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("FilePath")
                         .HasColumnType("nvarchar(max)");
@@ -398,6 +408,12 @@ namespace WuyiMusic_DAL.Migrations
 
                     b.Property<int?>("ListenCount")
                         .HasColumnType("int");
+
+                    b.Property<string>("MetaLink")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("MetaLinkImage")
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("Title")
                         .HasColumnType("nvarchar(max)");
@@ -412,6 +428,21 @@ namespace WuyiMusic_DAL.Migrations
                     b.HasIndex("ArtistId");
 
                     b.ToTable("Tracks");
+                });
+
+            modelBuilder.Entity("WuyiMusic_DAL.Models.TrackGenre", b =>
+                {
+                    b.Property<Guid>("TrackId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("GenreId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("TrackId", "GenreId");
+
+                    b.HasIndex("GenreId");
+
+                    b.ToTable("TrackGenres");
                 });
 
             modelBuilder.Entity("WuyiMusic_DAL.Models.User", b =>
@@ -506,15 +537,16 @@ namespace WuyiMusic_DAL.Migrations
                         .HasForeignKey("ArtistId")
                         .OnDelete(DeleteBehavior.Restrict);
 
-                    b.HasOne("WuyiMusic_DAL.Models.Genre", "Genre")
-                        .WithMany("Albums")
-                        .HasForeignKey("GenreId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
                     b.Navigation("Artist");
+                });
 
-                    b.Navigation("Genre");
+            modelBuilder.Entity("WuyiMusic_DAL.Models.Artist", b =>
+                {
+                    b.HasOne("WuyiMusic_DAL.Models.User", "User")
+                        .WithOne("Artist")
+                        .HasForeignKey("WuyiMusic_DAL.Models.Artist", "UserId");
+
+                    b.Navigation("User");
                 });
 
             modelBuilder.Entity("WuyiMusic_DAL.Models.Comment", b =>
@@ -588,7 +620,7 @@ namespace WuyiMusic_DAL.Migrations
                     b.HasOne("WuyiMusic_DAL.Models.Track", "Track")
                         .WithMany("PlaylistTracks")
                         .HasForeignKey("TrackId")
-                        .OnDelete(DeleteBehavior.Restrict)
+                        .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.Navigation("Playlist");
@@ -600,7 +632,8 @@ namespace WuyiMusic_DAL.Migrations
                 {
                     b.HasOne("WuyiMusic_DAL.Models.Track", "CurrentTrack")
                         .WithMany()
-                        .HasForeignKey("CurrentTrackId");
+                        .HasForeignKey("CurrentTrackId")
+                        .OnDelete(DeleteBehavior.SetNull);
 
                     b.HasOne("WuyiMusic_DAL.Models.User", "User")
                         .WithMany()
@@ -656,7 +689,7 @@ namespace WuyiMusic_DAL.Migrations
                     b.HasOne("WuyiMusic_DAL.Models.Track", "Track")
                         .WithMany()
                         .HasForeignKey("TrackId")
-                        .OnDelete(DeleteBehavior.Restrict)
+                        .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.HasOne("WuyiMusic_DAL.Models.User", "User")
@@ -675,16 +708,35 @@ namespace WuyiMusic_DAL.Migrations
                     b.HasOne("WuyiMusic_DAL.Models.Album", "Album")
                         .WithMany("Tracks")
                         .HasForeignKey("AlbumId")
-                        .OnDelete(DeleteBehavior.Restrict);
+                        .OnDelete(DeleteBehavior.SetNull);
 
                     b.HasOne("WuyiMusic_DAL.Models.Artist", "Artist")
                         .WithMany("Tracks")
                         .HasForeignKey("ArtistId")
-                        .OnDelete(DeleteBehavior.Restrict);
+                        .OnDelete(DeleteBehavior.SetNull);
 
                     b.Navigation("Album");
 
                     b.Navigation("Artist");
+                });
+
+            modelBuilder.Entity("WuyiMusic_DAL.Models.TrackGenre", b =>
+                {
+                    b.HasOne("Genre", "Genre")
+                        .WithMany("TrackGenres")
+                        .HasForeignKey("GenreId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("WuyiMusic_DAL.Models.Track", "Track")
+                        .WithMany("TrackGenres")
+                        .HasForeignKey("TrackId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Genre");
+
+                    b.Navigation("Track");
                 });
 
             modelBuilder.Entity("WuyiMusic_DAL.Models.UserRole", b =>
@@ -725,6 +777,11 @@ namespace WuyiMusic_DAL.Migrations
                     b.Navigation("User");
                 });
 
+            modelBuilder.Entity("Genre", b =>
+                {
+                    b.Navigation("TrackGenres");
+                });
+
             modelBuilder.Entity("WuyiMusic_DAL.Models.Album", b =>
                 {
                     b.Navigation("Tracks");
@@ -735,11 +792,6 @@ namespace WuyiMusic_DAL.Migrations
                     b.Navigation("Albums");
 
                     b.Navigation("Tracks");
-                });
-
-            modelBuilder.Entity("WuyiMusic_DAL.Models.Genre", b =>
-                {
-                    b.Navigation("Albums");
                 });
 
             modelBuilder.Entity("WuyiMusic_DAL.Models.Playlist", b =>
@@ -766,10 +818,14 @@ namespace WuyiMusic_DAL.Migrations
                     b.Navigation("PlaylistTracks");
 
                     b.Navigation("Ratings");
+
+                    b.Navigation("TrackGenres");
                 });
 
             modelBuilder.Entity("WuyiMusic_DAL.Models.User", b =>
                 {
+                    b.Navigation("Artist");
+
                     b.Navigation("Comments");
 
                     b.Navigation("Playlists");
