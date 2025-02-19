@@ -21,6 +21,9 @@ namespace WuyiMusic_DAL.Models
         public virtual Album? Album { get; set; }
         [ForeignKey("Artist")]
         public Guid? ArtistId { get; set; }
+        [ForeignKey("Genre")]
+        public Guid? GenreId { get; set; } 
+        public virtual Genre? Genre { get; set; }
         public virtual Artist? Artist { get; set; }
         public string? MetaLink { get; set; }
         public string? MetaLinkImage { get; set; }
@@ -30,7 +33,6 @@ namespace WuyiMusic_DAL.Models
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
         // Navigation properties
-        public virtual ICollection<TrackGenre>? TrackGenres { get; set; }
         public virtual ICollection<PlaylistTrack>? PlaylistTracks { get; set; }
         public virtual ICollection<Comment>? Comments { get; set; }
         public virtual ICollection<Rating>? Ratings { get; set; }

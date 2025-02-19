@@ -15,8 +15,8 @@ namespace WuyiMusic_Services.IServices
         Task<IEnumerable<Track>> GetAllAsync();
         Task<Track> GetByIdAsync(Guid id);
         Task<SearchResultDto> SearchAsync(string searchTerm);
-        Task AddTrackAsync(Track track, IFormFile file);
-        Task UpdateAsync(Track updatedTrack, IFormFile file = null);
+        Task AddTrackAsync(Track track, IFormFile file, IFormFile imageFile);
+        Task UpdateAsync(Track updatedTrack, IFormFile file = null, IFormFile imageFile = null);
         Task DeleteAsync(Guid id);
         Task<IEnumerable<Track>> GetFavoriteTracksAsync(Guid userId);
         Task<List<Track>> GetTrackRankingByListenCount(DateTime startDate, DateTime endDate, int topCount = 10);

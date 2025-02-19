@@ -15,10 +15,9 @@ namespace WuyiMusic_DAL.DTOS
         public string Title { get; set; }
         public string? TrackImage { get; set; }
         public Guid? AlbumId { get; set; }
-
+        public Guid? GenreId { get; set; }
         public Guid? ArtistId { get; set; }
-
-        [Required]
-        public IFormFile File { get; set; }
+        public IFormFile? File { get; set; }
+        public IFormFile? ImageFile { get; set; }
     }
 }

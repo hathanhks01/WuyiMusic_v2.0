@@ -1,4 +1,5 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using System.Linq;
 using WuyiMusic_DAL.IReponsitories;
 using WuyiMusic_DAL.Models;
 
@@ -76,8 +77,7 @@ namespace WuyiMusic_DAL.Reponsitories
         {
             return await _context.Queues
                 .Include(q => q.CurrentTrack)
-                    .ThenInclude(t => t.TrackGenres)
-                        .ThenInclude(tg => tg.Genre)
+                     .ThenInclude(t => t.Genre)
                 .FirstOrDefaultAsync(q => q.UserId == userId);
         }
 
@@ -86,8 +86,7 @@ namespace WuyiMusic_DAL.Reponsitories
             return await _context.Queues
                 .Include(q => q.QueueItems)
                     .ThenInclude(qi => qi.Track)
-                        .ThenInclude(t => t.TrackGenres)
-                            .ThenInclude(tg => tg.Genre)
+                        .ThenInclude(t => t.GenreId)
                 .FirstOrDefaultAsync(q => q.UserId == userId);
         }
 
@@ -95,8 +94,7 @@ namespace WuyiMusic_DAL.Reponsitories
         {
             return await _context.PlayHistories
                 .Include(h => h.Track)
-                    .ThenInclude(t => t.TrackGenres)
-                        .ThenInclude(tg => tg.Genre)
+                      .ThenInclude(t => t.Genre)
                 .Where(h => h.UserId == userId &&
                            h.PlayedAt >= startDate &&
                            h.PlayedAt <= endDate)
@@ -106,11 +104,10 @@ namespace WuyiMusic_DAL.Reponsitories
         public async Task<List<Track>> GetPopularTracksByGenres(List<Guid> genreIds, int limit)
         {
             return await _context.Tracks
-                .Include(t => t.TrackGenres)
-                    .ThenInclude(tg => tg.Genre)
+                .Include(t => t.Genre)
                 .Include(t => t.Album)
                 .Include(t => t.Artist)
-                .Where(t => t.TrackGenres.Any(tg => genreIds.Contains(tg.GenreId)))
+                .Where(t => t.GenreId.HasValue && genreIds.Contains(t.GenreId.Value)) // Kiểm tra null và chuyển về Guid
                 .OrderByDescending(t => t.Likes)
                 .Take(limit)
                 .ToListAsync();
@@ -121,8 +118,8 @@ namespace WuyiMusic_DAL.Reponsitories
             var playedTracks = await _context.PlayHistories
                 .Where(h => h.UserId == userId && h.IsCompleted)
                 .Include(h => h.Track)
-                    .ThenInclude(t => t.TrackGenres)
-                .SelectMany(h => h.Track.TrackGenres.Select(tg => tg.GenreId))
+                .Where(h => h.Track.GenreId.HasValue) // Lọc bỏ các track không có genre
+                .Select(h => h.Track.GenreId.Value) // Chuyển Guid? thành Guid
                 .GroupBy(genreId => genreId)
                 .OrderByDescending(g => g.Count())
                 .Take(limit)

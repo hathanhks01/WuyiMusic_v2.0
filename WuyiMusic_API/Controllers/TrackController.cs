@@ -68,11 +68,12 @@ namespace WuyiMusic_API.Controllers
                     TrackImage = trackDto.TrackImage,
                     AlbumId = trackDto.AlbumId,
                     ArtistId = trackDto.ArtistId,
+                    GenreId=trackDto.GenreId,
                     FilePath = trackDto.File.FileName,
                     Likes = 0,
                 };
 
-                await _trackService.AddTrackAsync(track, trackDto.File);
+                await _trackService.AddTrackAsync(track, trackDto.File, trackDto.ImageFile);
                 return CreatedAtAction(nameof(GetTrackById), new { id = track.TrackId }, track);
             }
             catch (Exception ex)
@@ -81,18 +82,41 @@ namespace WuyiMusic_API.Controllers
             }
         }
 
-        // PUT: api/track/{id}
         [HttpPut("UpdateTrack/{id}")]
-        public async Task<IActionResult> UpdateTrack(Guid id, [FromBody] Track track)
+        [Consumes("multipart/form-data")]
+        public async Task<IActionResult> UpdateTrack(
+     Guid id,
+     [FromForm] TrackDto trackDto) // Chỉ sử dụng 1 parameter [FromForm]
         {
-            if (id != track.TrackId)
+            try
             {
-                return BadRequest();
-            }
+                var track = new Track
+                {
+                    TrackId = id,
+                    Title = trackDto.Title,
+                    TrackImage = trackDto.TrackImage,
+                    AlbumId = trackDto.AlbumId ?? null,
+                    ArtistId = trackDto.ArtistId ?? null,
+                    FilePath = trackDto.File?.FileName
+                };
 
-            await _trackService.UpdateAsync(track);
-            return NoContent();
+                await _trackService.UpdateAsync(track, trackDto.File, trackDto.ImageFile);
+                return NoContent();
+            }
+            catch (ArgumentException ex)
+            {
+                return BadRequest(ex.Message);
+            }
+            catch (KeyNotFoundException)
+            {
+                return NotFound();
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, $"Lỗi server: {ex.Message}");
+            }
         }
+
 
         // DELETE: api/track/{id}
         [HttpDelete("{id}")]

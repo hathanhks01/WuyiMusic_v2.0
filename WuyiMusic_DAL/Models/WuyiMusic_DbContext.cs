@@ -27,7 +27,6 @@ namespace WuyiMusic_DAL.Models
         public DbSet<PlayHistory> PlayHistories { get; set; }
         public DbSet<UserFavoriteTrack> UserFavoriteTracks { get; set; }
         public DbSet<Genre> Genres { get; set; }
-        public DbSet<TrackGenre> TrackGenres { get; set; }
 
         public WuyiMusic_DbContext(DbContextOptions options) : base(options)
         {
@@ -42,21 +41,11 @@ namespace WuyiMusic_DAL.Models
         {
             base.OnModelCreating(modelBuilder);
 
-            // TrackGenre configurations
-            modelBuilder.Entity<TrackGenre>(entity =>
-            {
-                entity.HasKey(tg => new { tg.TrackId, tg.GenreId });
-
-                entity.HasOne(tg => tg.Track)
-                    .WithMany(t => t.TrackGenres)
-                    .HasForeignKey(tg => tg.TrackId)
-                    .OnDelete(DeleteBehavior.Cascade);
-
-                entity.HasOne(tg => tg.Genre)
-                    .WithMany(g => g.TrackGenres)
-                    .HasForeignKey(tg => tg.GenreId)
-                    .OnDelete(DeleteBehavior.Cascade);
-            });
+                modelBuilder.Entity<Track>()
+             .HasOne(t => t.Genre)
+             .WithOne(g => g.Track)
+             .HasForeignKey<Track>(t => t.GenreId)
+             .OnDelete(DeleteBehavior.SetNull);
 
             // Advertisement configurations
             modelBuilder.Entity<Advertisement>()

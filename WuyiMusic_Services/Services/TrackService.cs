@@ -32,7 +32,7 @@ namespace WuyiMusic_Services.Services
             return await _trackRepository.GetByIdAsync(id);
         }
 
-        public async Task AddTrackAsync(Track track, IFormFile file)
+        public async Task AddTrackAsync(Track track, IFormFile file, IFormFile imageFile)
         {
             if (file == null || file.Length == 0)
             {
@@ -41,10 +41,7 @@ namespace WuyiMusic_Services.Services
 
             try
             {
-                // Thêm track vào database với duration đã được format
                 await _trackRepository.AddAsync(track, file);
-
-                // Upload file lên Dropbox và cập nhật FilePath
                 using (var stream = file.OpenReadStream())
                 {
                     await _dropboxService.UploadFileAsync(stream, file.FileName);
@@ -52,8 +49,16 @@ namespace WuyiMusic_Services.Services
                     track.FilePath = sharedLink.DirectLink; // link direct
                     track.MetaLink = sharedLink.SharedLink;
                 }
-
-                // Cập nhật track với FilePath mới
+                if (imageFile != null && imageFile.Length > 0)
+                {
+                    using (var imageStream = imageFile.OpenReadStream())
+                    {
+                        var imageInfo = await _dropboxService.UploadImageAsync(imageStream, imageFile.FileName);
+                        var imageSharedLink = await _dropboxService.GetPermanentSharedLinkImageAsync(imageFile.FileName);
+                        track.TrackImage = imageSharedLink.DirectLink;
+                        track.MetaLinkImage = imageSharedLink.SharedLink;
+                    }
+                }
                 await _trackRepository.UpdateAsync(track);
             }
             catch (Exception ex)
@@ -62,33 +67,28 @@ namespace WuyiMusic_Services.Services
             }
         }
 
-        public async Task UpdateAsync(Track updatedTrack, IFormFile file = null)
+        public async Task UpdateAsync(Track updatedTrack, IFormFile file = null, IFormFile imageFile = null)
         {
-            // Lấy thông tin track hiện tại từ database
             var existingTrack = await _trackRepository.GetByIdAsync(updatedTrack.TrackId);
             if (existingTrack == null)
             {
                 throw new ArgumentException("Không tìm thấy track.");
             }
 
-            // Cập nhật các thuộc tính cơ bản
+            // Cập nhật các thuộc tính cơ bản (không bao gồm TrackImage)
             existingTrack.Title = updatedTrack.Title;
             existingTrack.Duration = updatedTrack.Duration;
             existingTrack.AlbumId = updatedTrack.AlbumId;
             existingTrack.ArtistId = updatedTrack.ArtistId;
-            existingTrack.TrackImage = updatedTrack.TrackImage;
 
-            // Xử lý nếu có file mới
+            // Xử lý file audio mới
             if (file != null && file.Length > 0)
             {
                 try
                 {
-                    // Lấy đường dẫn nội bộ từ link chia sẻ cũ
                     string oldInternalPath = await _dropboxService.GetInternalPathFromSharedLinkAsync(existingTrack.MetaLink);
-
                     using (var stream = file.OpenReadStream())
                     {
-                        // Thay thế file trên Dropbox
                         var folder = "/WuyiMusic_Track";
                         var newFileName = file.FileName;
 
@@ -99,52 +99,99 @@ namespace WuyiMusic_Services.Services
                             folder
                         );
 
-                        // Lấy link mới
                         var sharedLinkResult = await _dropboxService.GetPermanentSharedLinkAsync(newFileName);
-
-                        // Cập nhật metadata
                         existingTrack.FilePath = sharedLinkResult.DirectLink;
                         existingTrack.MetaLink = sharedLinkResult.SharedLink;
                     }
                 }
                 catch (Exception ex)
                 {
-                    throw new Exception($"Lỗi cập nhật file: {ex.Message}");
+                    throw new Exception($"Lỗi cập nhật file audio: {ex.Message}");
+                }
+            }
+
+            // Xử lý file ảnh mới
+            if (imageFile != null && imageFile.Length > 0)
+            {
+                try
+                {
+                    // Lấy đường dẫn ảnh cũ từ Dropbox
+                    string oldImageInternalPath = await _dropboxService.GetInternalPathFromSharedLinkAsync(existingTrack.MetaLinkImage);
+
+                    using (var imageStream = imageFile.OpenReadStream())
+                    {
+                        var imageFolder = "/WuyiMusic_Images";
+                        var newImageFileName = imageFile.FileName;
+
+                        // Upload ảnh mới và xóa ảnh cũ (nếu cần)
+                        var imageDropboxInfo = await _dropboxService.ReplaceFileAsync(
+                            imageStream,
+                            oldImageInternalPath,
+                            newImageFileName,
+                            imageFolder
+                        );
+
+                        // Lấy liên kết mới cho ảnh
+                        var imageSharedLinkResult = await _dropboxService.GetPermanentSharedLinkImageAsync(newImageFileName);
+                        existingTrack.TrackImage = imageSharedLinkResult.DirectLink;
+                        existingTrack.MetaLinkImage = imageSharedLinkResult.SharedLink;
+                    }
+
+                    // Xóa ảnh cũ khỏi Dropbox
+                    if (!string.IsNullOrEmpty(oldImageInternalPath))
+                    {
+                        await _dropboxService.DeleteFileFromDropboxAsync(oldImageInternalPath);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    throw new Exception($"Lỗi cập nhật ảnh: {ex.Message}");
                 }
             }
 
             // Lưu thay đổi vào database
             await _trackRepository.UpdateAsync(existingTrack);
         }
-
+        //hiện tại phương thức này nếu chưa xóa ở dropbox thì sẽ k xóa dc track (ràng buộc)
         public async Task DeleteAsync(Guid id)
         {
+            var trackToDelete = await _trackRepository.GetByIdAsync(id);
+            if (trackToDelete == null)
+            {
+                throw new KeyNotFoundException($"Track with ID {id} not found.");
+            }
+
             try
             {
-                var trackToDelete = await _trackRepository.GetByIdAsync(id);
-
-                if (trackToDelete != null)
+                if (!string.IsNullOrEmpty(trackToDelete.MetaLink))
                 {
-                    if (!string.IsNullOrEmpty(trackToDelete.MetaLink))
+                    var internalPath = await _dropboxService.GetInternalPathFromSharedLinkAsync(trackToDelete.MetaLink);
+                    if (!string.IsNullOrEmpty(internalPath))
                     {
-                        await _dropboxService.DeleteFileFromDropboxAsync(trackToDelete.MetaLink);
+                        var fileDeleted = await _dropboxService.DeleteFileFromDropboxAsync(internalPath);
+                        if (!fileDeleted)
+                        {
+                            Console.WriteLine($"File not found in Dropbox for track {id}. Proceeding with track deletion.");
+                        }
                     }
-                    else
-                    {
-                        // Log that MetaLink is null or empty
-                        Console.WriteLine($"MetaLink is null or empty for track ID: {id}");
-                    }
-
-                    await _trackRepository.DeleteAsync(id);
                 }
-                else
+                if (!string.IsNullOrEmpty(trackToDelete.MetaLinkImage))
                 {
-                    Console.WriteLine($"Track with ID: {id} not found.");
+                    var imageInternalPath = await _dropboxService.GetInternalPathFromSharedLinkAsync(trackToDelete.MetaLinkImage);
+                    if (!string.IsNullOrEmpty(imageInternalPath))
+                    {
+                        var imageDeleted = await _dropboxService.DeleteFileFromDropboxAsync(imageInternalPath);
+                        if (!imageDeleted)
+                        {
+                            Console.WriteLine($"Ảnh không tồn tại trên Dropbox cho track {id}. Tiếp tục xóa track.");
+                        }
+                    }
                 }
+                await _trackRepository.DeleteAsync(id);
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"An error occurred while deleting track with ID: {id}. Error: {ex.Message}");
+                throw new Exception($"Failed to delete track with ID {id}. Error: {ex.Message}", ex);
             }
         }
 

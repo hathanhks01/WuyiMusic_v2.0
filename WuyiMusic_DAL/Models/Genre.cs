@@ -6,5 +6,5 @@ public class Genre
     public string Name { get; set; }
     public string? Description { get; set; }=string.Empty;
     // Navigation property
-    public virtual ICollection<TrackGenre>? TrackGenres { get; set; }
+    public virtual Track Track { get; set; }
 }

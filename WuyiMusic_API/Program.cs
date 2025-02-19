@@ -25,7 +25,6 @@ builder.Services.AddControllers()
 builder.Services.AddDbContext<WuyiMusic_DbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 builder.Services.AddEndpointsApiExplorer();
-// Thay thế dòng builder.Services.AddSwaggerGen(); hiện tại bằng:
 builder.Services.AddSwaggerGen(c =>
 {
     c.SwaggerDoc("v1", new OpenApiInfo
@@ -33,6 +32,7 @@ builder.Services.AddSwaggerGen(c =>
         Title = "WuyiMusic API",
         Version = "v1"
     });
+
 
     // Thêm cấu hình security cho Swagger UI
     c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
