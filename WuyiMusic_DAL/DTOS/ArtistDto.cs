@@ -13,6 +13,7 @@ namespace WuyiMusic_DAL.DTOS
         public Guid ArtistId { get; set; }
         public string? Name { get; set; }
         public string? Bio { get; set; }
+        public bool? IsVerified { get; set; } = false;
         public string? MetaLink { get; set; }
         public string? ArtistImage { get; set; } 
         public IFormFile? ArtistImageFile { get; set; }

@@ -78,7 +78,7 @@ namespace WuyiMusic_Services.Services
             }
 
             var token = GenerateToken(user);
-            return (user, token); // Trả về user và token
+            return (user, token);
         }
 
         private string HashPassword(string password) =>
@@ -89,12 +89,18 @@ namespace WuyiMusic_Services.Services
 
         private string GenerateToken(User user)
         {
-            var claims = new[]
+            var roles = user.UserRoles.Select(ur => ur.Role.RoleName); 
+
+            var claims = new List<Claim>
+    {
+        new Claim(ClaimTypes.NameIdentifier, user.UserId.ToString()),
+        new Claim(JwtRegisteredClaimNames.Sub, user.Username),
+        new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
+    };
+            foreach (var role in roles)
             {
-            new Claim(ClaimTypes.NameIdentifier, user.UserId.ToString()),
-            new Claim(JwtRegisteredClaimNames.Sub, user.Username),
-            new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
-        };
+                claims.Add(new Claim(ClaimTypes.Role, role));
+            }
 
             var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_jwtSecret));
             var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);

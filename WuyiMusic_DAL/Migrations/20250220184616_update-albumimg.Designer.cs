@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using WuyiMusic_DAL.Models;
 
@@ -11,9 +12,11 @@ using WuyiMusic_DAL.Models;
 namespace WuyiMusic_DAL.Migrations
 {
     [DbContext(typeof(WuyiMusic_DbContext))]
-    partial class WuyiMusic_DbContextModelSnapshot : ModelSnapshot
+    [Migration("20250220184616_update-albumimg")]
+    partial class updatealbumimg
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -436,7 +439,9 @@ namespace WuyiMusic_DAL.Migrations
 
                     b.HasIndex("ArtistId");
 
-                    b.HasIndex("GenreId");
+                    b.HasIndex("GenreId")
+                        .IsUnique()
+                        .HasFilter("[GenreId] IS NOT NULL");
 
                     b.ToTable("Tracks");
                 });
@@ -712,8 +717,8 @@ namespace WuyiMusic_DAL.Migrations
                         .OnDelete(DeleteBehavior.SetNull);
 
                     b.HasOne("Genre", "Genre")
-                        .WithMany("Track")
-                        .HasForeignKey("GenreId")
+                        .WithOne("Track")
+                        .HasForeignKey("WuyiMusic_DAL.Models.Track", "GenreId")
                         .OnDelete(DeleteBehavior.SetNull);
 
                     b.Navigation("Album");
@@ -763,7 +768,8 @@ namespace WuyiMusic_DAL.Migrations
 
             modelBuilder.Entity("Genre", b =>
                 {
-                    b.Navigation("Track");
+                    b.Navigation("Track")
+                        .IsRequired();
                 });
 
             modelBuilder.Entity("WuyiMusic_DAL.Models.Album", b =>

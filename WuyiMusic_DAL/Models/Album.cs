@@ -13,6 +13,8 @@ namespace WuyiMusic_DAL.Models
         [Key]
         public Guid AlbumId { get; set; } = Guid.NewGuid();
         public string? Title { get; set; }
+        public string? albumImage { get; set; }
+        public string? MetaLinkImage { get; set; }
         public DateTime? ReleaseDate { get; set; }
 
         [ForeignKey("Artist")]

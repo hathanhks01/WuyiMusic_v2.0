@@ -19,6 +19,9 @@ namespace WuyiMusic_DAL.Helper
             CreateMap<Playlist, PlaylistDto>(); /// Get
             CreateMap<PlaylistDto, Playlist>(); /// Put and Post
             CreateMap<Comment, CommentDto>();
+            CreateMap<Album, Album>();
+            CreateMap<ArtistDto, Artist>();
+            CreateMap<UserDto, User>();
         }
     }
 }

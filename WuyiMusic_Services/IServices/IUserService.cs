@@ -6,14 +6,14 @@ using System.Threading.Tasks;
 using WuyiMusic_DAL.DTOS;
 using WuyiMusic_DAL.Models;
 
-namespace WuyiMusic_DAL.IReponsitories
+namespace WuyiMusic_Services.IServices
 {
-    public interface IUserRepository
+    public interface IUserService
     {
         Task<IEnumerable<User>> GetAllUser();
         Task<User> GetByIdUser(Guid id);
-        Task<User> AddUser(User user);
-        Task<User> UpdateUser(User user);
+        Task<User> AddUser(UserDto userDto);
+        Task<User> UpdateUser(UserDto userDto);
         Task DeleteUser(Guid id);
     }
 }

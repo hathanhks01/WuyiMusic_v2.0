@@ -10,9 +10,9 @@ namespace WuyiMusic_DAL.IReponsitories
 {
     public interface IAlbumRepository
     {
-        Task<IEnumerable<object>> GetAllAlbum();
+        Task<IEnumerable<Album>> GetAllAlbum();
         Task<object> GetByIdAlbum(Guid id);
-        Task<Album> AddAlbum(AlbumDto albumDto);
+        Task<Album> AddAlbum(Album album);
         Task<Album> UpdateAlbum(AlbumDto albumDto);
         Task DeleteAlbum(Guid id);
     }

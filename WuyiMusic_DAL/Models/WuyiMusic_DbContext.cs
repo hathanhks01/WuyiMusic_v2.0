@@ -43,8 +43,8 @@ namespace WuyiMusic_DAL.Models
 
                 modelBuilder.Entity<Track>()
              .HasOne(t => t.Genre)
-             .WithOne(g => g.Track)
-             .HasForeignKey<Track>(t => t.GenreId)
+             .WithMany(g => g.Track)
+              .HasForeignKey(t => t.GenreId)
              .OnDelete(DeleteBehavior.SetNull);
 
             // Advertisement configurations

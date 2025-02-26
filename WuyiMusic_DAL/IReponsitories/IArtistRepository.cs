@@ -14,7 +14,8 @@ namespace WuyiMusic_DAL.IReponsitories
         Task<Artist?> GetArtistByUserIdAsync(Guid userId);
         Task<object> GetByIdArtist(Guid id);
         Task<Artist> AddArtist(ArtistDto artistDto, Guid userId);
-        Task<Artist> UpdateArtist(ArtistDto artistDto);
+        Task<Artist> AddArtistForAdm(Artist artist);
+        Task<Artist> UpdateArtist(Artist artist);
         Task DeleteArtist(Guid id);
         Task<IEnumerable<Artist>> GetRandomArtistsAsync();
     }

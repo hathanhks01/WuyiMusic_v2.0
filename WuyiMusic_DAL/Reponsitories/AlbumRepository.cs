@@ -19,41 +19,39 @@ namespace WuyiMusic_DAL.Reponsitories
             _context = context;
         }
 
-        public async Task<Album> AddAlbum(AlbumDto albumDto)
-        {
-            var album = new Album
-            {
-                AlbumId = Guid.NewGuid(),
-                ArtistId = albumDto.ArtistId,
-                Title = albumDto.Title,
-                ReleaseDate = albumDto.ReleaseDate,
-            };
+        public async Task<Album> AddAlbum(Album album)
+        {   
             await _context.Albums.AddAsync(album);
             _context.SaveChanges();
             return album;
         }
-
-        public Task DeleteAlbum(Guid id)
+        public async Task DeleteAlbum(Guid id)
         {
-            throw new NotImplementedException();
+            var album = await _context.Albums
+                                      .Include(a => a.Tracks)
+                                      .FirstOrDefaultAsync(a => a.AlbumId == id);
+
+            if (album == null)
+            {
+                throw new Exception("Album không tồn tại.");
+            }
+
+            if (album.Tracks != null && album.Tracks.Any())
+            {
+                _context.Tracks.RemoveRange(album.Tracks);
+            }
+
+            _context.Albums.Remove(album);
+            await _context.SaveChangesAsync();
         }
 
-        public async Task<IEnumerable<object>> GetAllAlbum()
+
+        public async Task<IEnumerable<Album>> GetAllAlbum()
         {
             var result = await _context.Albums
-             .Include(alb => alb.Artist)
-         .Select(alb => new
-         {
-             alb.AlbumId,
-             alb.Title,
-             alb.ReleaseDate,
-
-             Artist = alb.Artist == null ? null : new
-             {
-                 alb.Artist.ArtistId,
-                 alb.Artist.Name
-             }
-         }).ToListAsync();
+                .Include(a => a.Tracks)
+                .Include(a => a.Artist)
+                .ToListAsync();
             return result;
         }
 

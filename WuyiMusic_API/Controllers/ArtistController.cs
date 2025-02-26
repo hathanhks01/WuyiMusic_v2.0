@@ -62,18 +62,36 @@ namespace WuyiMusic_API.Controllers
             await _artistSer.AddArtist(artistDto, userId);
             return CreatedAtAction(nameof(GetArtistById), new { id = artistDto.ArtistId }, artistDto);
         }
-
-
-        [HttpPut("{id}")]
-        public async Task<IActionResult> UpdateArtist(Guid id, ArtistDto artistDto)
+        [HttpPost("CreateArtistForAdm")]
+        public async Task<ActionResult<Artist>> CreateArtistForAdm([FromForm] ArtistDto artistDto)
         {
-            if (id != artistDto.ArtistId)
-            {
-                return BadRequest();
-            }
+            var createdArtist = await _artistSer.AddArtistForAdm(artistDto);
+            return CreatedAtAction(nameof(GetArtistById), new { id = createdArtist.ArtistId }, createdArtist);
+        }
 
-            await _artistSer.UpdateArtist(artistDto);
-            return NoContent();
+
+        [HttpPut("UpdateArtist/{id}")]
+        public async Task<IActionResult> UpdateArtist(Guid id, [FromForm] ArtistDto artistDto)
+        {
+            try
+            {
+                artistDto.ArtistId = id;
+                var updatedArtist = await _artistSer.UpdateArtist(artistDto);
+                return Ok(updatedArtist);
+            }
+            catch (KeyNotFoundException ex)
+            {
+                return NotFound(ex.Message);
+            }
+            catch (ArgumentNullException ex)
+            {
+                return BadRequest(ex.Message);
+            }
+            catch (Exception ex)
+            {
+                // Log lỗi chi tiết ở đây
+                return StatusCode(500, $"Lỗi server: {ex.Message}");
+            }
         }
 
         [HttpDelete("{id}")]

@@ -161,5 +161,15 @@ namespace WuyiMusic_API.Controllers
         {
             return await _trackService.GetRandom6Track(artistId);
         }
+
+        [HttpGet("IncrementListenCount")]
+        public async Task<IActionResult> IncrementListenCount(Guid trackId)
+        {
+            await _trackService.IncrementListenCount(trackId);
+            return Ok(); 
+        }
+
+
+
     }
 }

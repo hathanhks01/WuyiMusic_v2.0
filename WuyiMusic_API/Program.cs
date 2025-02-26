@@ -23,7 +23,10 @@ builder.Services.AddControllers()
     });
 
 builder.Services.AddDbContext<WuyiMusic_DbContext>(options =>
-    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection"))
+    .EnableSensitiveDataLogging() 
+           .LogTo(Console.WriteLine, LogLevel.Information));
+
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(c =>
 {
@@ -121,8 +124,12 @@ builder.Services.AddScoped<IArtistRepository, ArtistRepository>();
 builder.Services.AddScoped<IArtistService, ArtistService>();
 builder.Services.AddScoped<IGenreRepository, GenreReponsitory>();
 builder.Services.AddScoped<IGenreService, GenreService>();
+builder.Services.AddScoped<IAlbumRepository, AlbumRepository>();
+builder.Services.AddScoped<IAlbumService, AlbumService>();
 builder.Services.AddScoped<IUserStatisticsRepository,UserStatisticsRepository>();
 builder.Services.AddScoped<IUserStatisticsService, UserStatisticsService>();
+builder.Services.AddScoped<IUserRepository, UserRepository>();
+builder.Services.AddScoped<IUserService, UserService>();
 
 
 var app = builder.Build();

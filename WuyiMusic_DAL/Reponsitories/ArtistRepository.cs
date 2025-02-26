@@ -33,10 +33,17 @@ namespace WuyiMusic_DAL.Reponsitories
                 ArtistId = userId,
                 Name = artistDto.Name,
                 Bio = artistDto.Bio,
+                IsVerified = artistDto.IsVerified,  
                 UserId=userId,
                 ArtistImage = artistDto.ArtistImage,
                 CreatedAt = DateTime.Now,
             };
+            await _context.Artists.AddAsync(artist);
+            _context.SaveChanges();
+            return artist;
+        }
+        public async Task<Artist> AddArtistForAdm(Artist artist)
+        {
             await _context.Artists.AddAsync(artist);
             _context.SaveChanges();
             return artist;
@@ -62,18 +69,20 @@ namespace WuyiMusic_DAL.Reponsitories
             return await _context.Artists.FirstOrDefaultAsync(x => x.ArtistId == id); 
         }
 
-        public async Task<Artist> UpdateArtist(ArtistDto artistDto)
+        public async Task<Artist> UpdateArtist(Artist artist)
         {
-            if (artistDto == null) throw new ArgumentNullException(nameof(artistDto));
+            if (artist == null) throw new ArgumentNullException(nameof(artist));
 
             var existingArtists = await _context.Artists
-                .FirstOrDefaultAsync(cm => cm.ArtistId == artistDto.ArtistId);
+                .FindAsync(artist.ArtistId);
 
             if (existingArtists == null) throw new InvalidOperationException("Artists không tồn tại.");
 
-            existingArtists.Name = artistDto.Name;
-            existingArtists.Bio = artistDto.Bio;
-            existingArtists.ArtistImage = artistDto.ArtistImage;
+            existingArtists.Name = artist.Name;
+            existingArtists.Bio = artist.Bio;
+            existingArtists.IsVerified = artist.IsVerified;
+            existingArtists.ArtistImage = artist.ArtistImage;
+            existingArtists.MetaLink = artist.MetaLink;
             await _context.SaveChangesAsync();
             return existingArtists;
         }
@@ -93,7 +102,6 @@ namespace WuyiMusic_DAL.Reponsitories
 
             var selectedArtists = artists.OrderBy(x => random.Next()).Take(count).ToList();
 
-            // Cập nhật danh sách artist đã chọn
             _previouslySelectedArtists.AddRange(selectedArtists);
 
             return selectedArtists;

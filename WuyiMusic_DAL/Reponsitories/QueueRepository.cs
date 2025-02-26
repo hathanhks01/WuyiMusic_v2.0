@@ -14,137 +14,164 @@ namespace WuyiMusic_DAL.Reponsitories
             _context = context;
         }
 
-        public async Task<Queue> CreateRandomQueue(Guid userId, Guid initialTrackId, int numberOfTracks = 50)
+        public async Task<Queue> CreateQueueAsync(Guid userId, Guid currentTrackId)
         {
-            // Tạo queue mới
-            var queue = new Queue
+            using var transaction = await _context.Database.BeginTransactionAsync();
+            try
             {
-                UserId = userId,
-                CurrentTrackId = initialTrackId,
-                IsShuffled = true,
-                CreatedAt = DateTime.UtcNow
-            };
-
-            await _context.Set<Queue>().AddAsync(queue);
-
-            // Lấy danh sách track ngẫu nhiên, loại trừ track hiện tại
-            var randomTracks = await _context.Set<Track>()
-                .Where(t => t.TrackId != initialTrackId)
-                .OrderBy(r => Guid.NewGuid()) // Sắp xếp ngẫu nhiên
-                .Take(numberOfTracks - 1)
-                .ToListAsync();
-
-            // Thêm track hiện tại vào vị trí đầu tiên
-            var queueItems = new List<QueueItem>
-        {
-            new QueueItem
-            {
-                QueueId = queue.QueueId,
-                TrackId = initialTrackId,
-                Position = 0,
-                OriginalPosition = 0,
-                AddedAt = DateTime.UtcNow
-            }
-        };
-
-            // Thêm các track ngẫu nhiên vào queue
-            for (int i = 0; i < randomTracks.Count; i++)
-            {
-                queueItems.Add(new QueueItem
+                var user = await _context.Users.FindAsync(userId);
+                if (user == null)
                 {
-                    QueueId = queue.QueueId,
-                    TrackId = randomTracks[i].TrackId,
-                    Position = i + 1,
-                    OriginalPosition = i + 1,
+                    throw new Exception("User not found");
+                }
+                // 1. Xóa queue hiện tại nếu tồn tại
+                var existingQueue = await _context.Queues
+                    .Include(q => q.QueueItems)
+                    .FirstOrDefaultAsync(q => q.UserId == userId);
+
+                if (existingQueue != null)
+                {
+                    _context.QueueItems.RemoveRange(existingQueue.QueueItems);
+                    _context.Queues.Remove(existingQueue);
+                    await _context.SaveChangesAsync();
+                }
+
+                // 2. Tạo queue mới
+                var newQueue = new Queue
+                {
+                    UserId = userId,
+                    CurrentTrackId = currentTrackId,
+                    CreatedAt = DateTime.UtcNow,
+                    IsShuffled = false,
+                    IsRepeated = false
+                };
+                _context.Queues.Add(newQueue);
+                await _context.SaveChangesAsync();
+
+                // 3. Thêm track được chọn vào đầu queue
+                var currentTrackItem = new QueueItem
+                {
+                    QueueId = newQueue.QueueId,
+                    TrackId = currentTrackId,
+                    Position = 0,
+                    OriginalPosition = 0,
                     AddedAt = DateTime.UtcNow
-                });
+                };
+                _context.QueueItems.Add(currentTrackItem);
+
+                // 4. Lấy các track khác và xáo trộn
+                var otherTracks = await _context.Tracks
+                    .Where(t => t.TrackId != currentTrackId)
+                    .OrderBy(_ => Guid.NewGuid())
+                    .ToListAsync();
+
+                // 5. Thêm các track vào queue
+                var position = 1;
+                foreach (var track in otherTracks)
+                {
+                    _context.QueueItems.Add(new QueueItem
+                    {
+                        QueueId = newQueue.QueueId,
+                        TrackId = track.TrackId,
+                        Position = position,
+                        OriginalPosition = position,
+                        AddedAt = DateTime.UtcNow
+                    });
+                    position++;
+                }
+
+                await _context.SaveChangesAsync();
+                await transaction.CommitAsync();
+
+                return await GetQueueByUserIdAsync(userId);
             }
-
-            await _context.Set<QueueItem>().AddRangeAsync(queueItems);
-            await _context.SaveChangesAsync();
-
-            return queue;
+            catch
+            {
+                await transaction.RollbackAsync();
+                throw;
+            }
         }
 
-        public async Task<Queue> CreateQueue(Queue queue)
+        public async Task<Queue> CreateQueueFromAlbumAsync(Guid userId, Guid albumId)
         {
-            _context.Queues.Add(queue);
-            await _context.SaveChangesAsync();
-            return queue;
-        }
+            using var transaction = await _context.Database.BeginTransactionAsync();
+            try
+            {
+                var user = await _context.Users.FindAsync(userId);
+                if (user == null)
+                {
+                    throw new Exception("Không tìm thấy người dùng");
+                }
 
-        public async Task<Queue> GetQueueWithCurrentTrack(Guid userId)
-        {
-            return await _context.Queues
-                .Include(q => q.CurrentTrack)
-                     .ThenInclude(t => t.Genre)
-                .FirstOrDefaultAsync(q => q.UserId == userId);
-        }
+                var album = await _context.Albums
+                    .Include(a => a.Tracks)
+                    .FirstOrDefaultAsync(a => a.AlbumId == albumId);
 
-        public async Task<Queue> GetQueueWithItems(Guid userId)
+                if (album == null || !album.Tracks.Any())
+                {
+                    throw new Exception("Không tìm thấy album hoặc album không có bài hát nào");
+                }
+
+                // 1. Xóa queue hiện tại nếu có
+                var existingQueue = await _context.Queues
+                    .Include(q => q.QueueItems)
+                    .FirstOrDefaultAsync(q => q.UserId == userId);
+
+                if (existingQueue != null)
+                {
+                    _context.QueueItems.RemoveRange(existingQueue.QueueItems);
+                    _context.Queues.Remove(existingQueue);
+                    await _context.SaveChangesAsync();
+                }
+
+                // 2. Tạo queue mới với bài hát đầu tiên của album
+                var firstTrack = album.Tracks.First();
+                var newQueue = new Queue
+                {
+                    UserId = userId,
+                    CurrentTrackId = firstTrack.TrackId,
+                    CreatedAt = DateTime.UtcNow,
+                    IsShuffled = false,
+                    IsRepeated = false
+                };
+
+                _context.Queues.Add(newQueue);
+                await _context.SaveChangesAsync();
+
+                // 3. Thêm tất cả các bài hát của album vào queue
+                var position = 0;
+                foreach (var track in album.Tracks)
+                {
+                    _context.QueueItems.Add(new QueueItem
+                    {
+                        QueueId = newQueue.QueueId,
+                        TrackId = track.TrackId,
+                        Position = position,
+                        OriginalPosition = position,
+                        AddedAt = DateTime.UtcNow
+                    });
+                    position++;
+                }
+
+                await _context.SaveChangesAsync();
+                await transaction.CommitAsync();
+
+                return await GetQueueByUserIdAsync(userId);
+            }
+            catch
+            {
+                await transaction.RollbackAsync();
+                throw;
+            }
+        }
+        public async Task<Queue> GetQueueByUserIdAsync(Guid userId)
         {
             return await _context.Queues
                 .Include(q => q.QueueItems)
                     .ThenInclude(qi => qi.Track)
-                        .ThenInclude(t => t.GenreId)
+                .Include(q => q.CurrentTrack)
                 .FirstOrDefaultAsync(q => q.UserId == userId);
         }
 
-        public async Task<List<PlayHistory>> GetPlayHistory(Guid userId, DateTime startDate, DateTime endDate)
-        {
-            return await _context.PlayHistories
-                .Include(h => h.Track)
-                      .ThenInclude(t => t.Genre)
-                .Where(h => h.UserId == userId &&
-                           h.PlayedAt >= startDate &&
-                           h.PlayedAt <= endDate)
-                .ToListAsync();
-        }
-
-        public async Task<List<Track>> GetPopularTracksByGenres(List<Guid> genreIds, int limit)
-        {
-            return await _context.Tracks
-                .Include(t => t.Genre)
-                .Include(t => t.Album)
-                .Include(t => t.Artist)
-                .Where(t => t.GenreId.HasValue && genreIds.Contains(t.GenreId.Value)) // Kiểm tra null và chuyển về Guid
-                .OrderByDescending(t => t.Likes)
-                .Take(limit)
-                .ToListAsync();
-        }
-
-        public async Task<List<Guid>> GetFavoriteGenres(Guid userId, int limit)
-        {
-            var playedTracks = await _context.PlayHistories
-                .Where(h => h.UserId == userId && h.IsCompleted)
-                .Include(h => h.Track)
-                .Where(h => h.Track.GenreId.HasValue) // Lọc bỏ các track không có genre
-                .Select(h => h.Track.GenreId.Value) // Chuyển Guid? thành Guid
-                .GroupBy(genreId => genreId)
-                .OrderByDescending(g => g.Count())
-                .Take(limit)
-                .Select(g => g.Key)
-                .ToListAsync();
-
-            return playedTracks;
-        }
-
-        public async Task AddQueueItem(QueueItem queueItem)
-        {
-            _context.QueueItems.Add(queueItem);
-            await _context.SaveChangesAsync();
-        }
-
-        public async Task UpdateQueue(Queue queue)
-        {
-            _context.Queues.Update(queue);
-            await _context.SaveChangesAsync();
-        }
-
-        public async Task SavePlayHistory(PlayHistory history)
-        {
-            _context.PlayHistories.Add(history);
-            await _context.SaveChangesAsync();
-        }
     }
 }
