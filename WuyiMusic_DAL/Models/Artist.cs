@@ -24,6 +24,7 @@ namespace WuyiMusic_DAL.Models
         public DateTime? CreatedAt { get; set; }
         public virtual ICollection<Album>? Albums { get; set; }
         public virtual ICollection<Track>? Tracks { get; set; }
+        public virtual ICollection<ArtistFollower> Followers { get; set; }
         public virtual User? User { get; set; }
     }
 }

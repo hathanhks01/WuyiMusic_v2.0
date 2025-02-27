@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using WuyiMusic_DAL.DTOS;
 using WuyiMusic_DAL.IReponsitories;
 using WuyiMusic_DAL.Models;
+using WuyiMusic_DAL.Reponsitories;
 using WuyiMusic_Services.IServices;
 
 namespace WuyiMusic_Services.Services
@@ -64,9 +65,35 @@ namespace WuyiMusic_Services.Services
 
             return await _artistRepo.AddArtist(artistDto,userId);
         }
-        public Task DeleteArtist(Guid id)
+        public async Task DeleteArtist(Guid id)
         {
-            throw new NotImplementedException();
+            var trackToDelete = await _artistRepo.GetByIdArtist(id) as Artist;
+            if (trackToDelete == null)
+            {
+                throw new KeyNotFoundException($"Track with ID {id} not found.");
+            }
+
+            try
+            {
+                if (!string.IsNullOrEmpty(trackToDelete.MetaLink))
+                {
+                    var internalPath = await _dropboxService.GetInternalPathFromSharedLinkAsync(trackToDelete.MetaLink);
+                    if (!string.IsNullOrEmpty(internalPath))
+                    {
+                        var fileDeleted = await _dropboxService.DeleteFileFromDropboxAsync(internalPath);
+                        if (!fileDeleted)
+                        {
+                            Console.WriteLine($"File not found in Dropbox for img {id}. Proceeding with track deletion.");
+                        }
+                    }
+                }
+          
+                await _artistRepo.DeleteArtist(id);
+            }
+            catch (Exception ex)
+            {
+                throw new Exception($"Failed to delete artist with ID {id}. Error: {ex.Message}", ex);
+            }
         }
 
         public async Task<IEnumerable<object>> GetAllArtist()
@@ -96,6 +123,7 @@ namespace WuyiMusic_Services.Services
             string oldMetaLink = null;
             existingArtist.Name = artistDto.Name; 
             existingArtist.Bio = artistDto.Bio; 
+            existingArtist.IsVerified = artistDto.IsVerified;
 
             if (artistDto.ArtistImageFile == null || artistDto.ArtistImageFile.Length == 0)
             {

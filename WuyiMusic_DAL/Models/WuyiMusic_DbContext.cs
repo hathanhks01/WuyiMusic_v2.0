@@ -17,16 +17,14 @@ namespace WuyiMusic_DAL.Models
         public DbSet<Track> Tracks { get; set; }
         public DbSet<Playlist> Playlists { get; set; }
         public DbSet<PlaylistTrack> PlaylistTracks { get; set; }
-        public DbSet<Comment> Comments { get; set; }
-        public DbSet<Rating> Ratings { get; set; }
         public DbSet<Suggestion> Suggestions { get; set; }
-        public DbSet<Advertisement> Advertisements { get; set; }
         public DbSet<Lyrics> Lyrics { get; set; }
         public DbSet<Queue> Queues { get; set; }
         public DbSet<QueueItem> QueueItems { get; set; }
         public DbSet<PlayHistory> PlayHistories { get; set; }
         public DbSet<UserFavoriteTrack> UserFavoriteTracks { get; set; }
         public DbSet<Genre> Genres { get; set; }
+        public DbSet<ArtistFollower> ArtistFollowers { get; set; }
 
         public WuyiMusic_DbContext(DbContextOptions options) : base(options)
         {
@@ -46,13 +44,6 @@ namespace WuyiMusic_DAL.Models
              .WithMany(g => g.Track)
               .HasForeignKey(t => t.GenreId)
              .OnDelete(DeleteBehavior.SetNull);
-
-            // Advertisement configurations
-            modelBuilder.Entity<Advertisement>()
-                .HasOne(a => a.User)
-                .WithMany()
-                .HasForeignKey(a => a.UserId)
-                .OnDelete(DeleteBehavior.Cascade);
 
             modelBuilder.Entity<User>()
                .HasOne(u => u.Artist)
@@ -84,19 +75,6 @@ namespace WuyiMusic_DAL.Models
                 .WithOne(track => track.Artist)
                 .HasForeignKey(track => track.ArtistId)
                 .OnDelete(DeleteBehavior.SetNull);
-
-            // Comment configurations
-            modelBuilder.Entity<Comment>()
-                .HasOne(c => c.Track)
-                .WithMany(t => t.Comments)
-                .HasForeignKey(c => c.TrackId)
-                .OnDelete(DeleteBehavior.Cascade);
-
-            modelBuilder.Entity<Comment>()
-                .HasOne(c => c.User)
-                .WithMany(u => u.Comments)
-                .HasForeignKey(c => c.UserId)
-                .OnDelete(DeleteBehavior.Restrict);
 
             // Lyrics configurations
             modelBuilder.Entity<Lyrics>()
@@ -130,19 +108,6 @@ namespace WuyiMusic_DAL.Models
                 .WithMany(t => t.PlaylistTracks)
                 .HasForeignKey(pt => pt.TrackId)
                 .OnDelete(DeleteBehavior.Cascade);
-
-            // Rating configurations
-            modelBuilder.Entity<Rating>()
-                .HasOne(r => r.Track)
-                .WithMany(t => t.Ratings)
-                .HasForeignKey(r => r.TrackId)
-                .OnDelete(DeleteBehavior.Cascade);
-
-            modelBuilder.Entity<Rating>()
-                .HasOne(r => r.User)
-                .WithMany(u => u.Ratings)
-                .HasForeignKey(r => r.UserId)
-                .OnDelete(DeleteBehavior.Restrict);
 
             // Role configurations
             modelBuilder.Entity<Role>()
@@ -191,12 +156,6 @@ namespace WuyiMusic_DAL.Models
                 .HasForeignKey(p => p.UserId)
                 .OnDelete(DeleteBehavior.Cascade);
 
-            modelBuilder.Entity<User>()
-                .HasMany(u => u.Comments)
-                .WithOne(c => c.User)
-                .HasForeignKey(c => c.UserId)
-                .OnDelete(DeleteBehavior.Cascade);
-
             // UserRole configurations
             modelBuilder.Entity<UserRole>()
                 .HasOne(ur => ur.User)
@@ -225,6 +184,18 @@ namespace WuyiMusic_DAL.Models
                 .WithMany()
                 .HasForeignKey(q => q.CurrentTrackId)
                 .OnDelete(DeleteBehavior.SetNull);
+
+            modelBuilder.Entity<ArtistFollower>()
+               .HasOne(af => af.User)
+               .WithMany(u => u.FollowedArtists)
+               .HasForeignKey(af => af.UserId)
+               .OnDelete(DeleteBehavior.Restrict); 
+
+            modelBuilder.Entity<ArtistFollower>()
+                .HasOne(af => af.Artist)
+                .WithMany(a => a.Followers)
+                .HasForeignKey(af => af.ArtistId)
+                .OnDelete(DeleteBehavior.Restrict);
 
         }
     }

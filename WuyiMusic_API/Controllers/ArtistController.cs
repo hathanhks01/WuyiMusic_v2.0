@@ -97,7 +97,16 @@ namespace WuyiMusic_API.Controllers
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteArtist(Guid id)
         {
-            throw new NotImplementedException();
+            try
+            {
+                await _artistSer.DeleteArtist(id);
+                return Ok();
+            }
+            catch (Exception)
+            {
+
+                throw;
+            }
         }
     }
 }

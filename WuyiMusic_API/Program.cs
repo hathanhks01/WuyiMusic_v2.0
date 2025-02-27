@@ -103,8 +103,6 @@ builder.Services.AddCors(options =>
 
 // Thêm các dịch vụ repository và service
 builder.Services.AddScoped<IRoleRepository, RoleRepository>();
-builder.Services.AddScoped<ICommentRepository, CommentRepository>();
-builder.Services.AddScoped<ICommentService, CommentService>();
 builder.Services.AddScoped<IUserRepository, UserRepository>();
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<ILyricsRepository, LyricsRepository>();
@@ -130,7 +128,8 @@ builder.Services.AddScoped<IUserStatisticsRepository,UserStatisticsRepository>()
 builder.Services.AddScoped<IUserStatisticsService, UserStatisticsService>();
 builder.Services.AddScoped<IUserRepository, UserRepository>();
 builder.Services.AddScoped<IUserService, UserService>();
-
+builder.Services.AddScoped<IArtistFollowerRepository, ArtistFollowerRepository>();
+builder.Services.AddScoped<IArtistFollowerService, ArtistFollowerService>();
 
 var app = builder.Build();
 

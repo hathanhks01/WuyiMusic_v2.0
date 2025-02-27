@@ -167,10 +167,11 @@ namespace WuyiMusic_DAL.Reponsitories
         public async Task<Queue> GetQueueByUserIdAsync(Guid userId)
         {
             return await _context.Queues
-                .Include(q => q.QueueItems)
-                    .ThenInclude(qi => qi.Track)
-                .Include(q => q.CurrentTrack)
-                .FirstOrDefaultAsync(q => q.UserId == userId);
+        .Include(q => q.QueueItems
+            .OrderBy(qi => qi.Position)) // Thêm OrderBy
+        .ThenInclude(qi => qi.Track)
+        .Include(q => q.CurrentTrack)
+        .FirstOrDefaultAsync(q => q.UserId == userId);
         }
 
     }

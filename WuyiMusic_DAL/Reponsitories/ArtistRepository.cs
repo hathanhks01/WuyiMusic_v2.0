@@ -49,12 +49,23 @@ namespace WuyiMusic_DAL.Reponsitories
             return artist;
         }
 
-        public Task DeleteArtist(Guid id)
+        public async Task DeleteArtist(Guid id)
         {
-            throw new NotImplementedException();
+            var remover = await _context.Artists.FindAsync(id);
+
+            if (remover != null)
+            {
+                _context.Artists.Remove(remover); 
+                await _context.SaveChangesAsync(); 
+            }
+            else
+            {
+                throw new KeyNotFoundException("Artist not found.");
+            }
         }
 
-        public  async Task<IEnumerable<object>> GetAllArtist()
+
+        public async Task<IEnumerable<object>> GetAllArtist()
         {
             return await _context.Artists.ToListAsync();  
         }

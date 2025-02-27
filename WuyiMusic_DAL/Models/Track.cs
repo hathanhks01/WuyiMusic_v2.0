@@ -34,8 +34,6 @@ namespace WuyiMusic_DAL.Models
 
         // Navigation properties
         public virtual ICollection<PlaylistTrack>? PlaylistTracks { get; set; }
-        public virtual ICollection<Comment>? Comments { get; set; }
-        public virtual ICollection<Rating>? Ratings { get; set; }
         public virtual ICollection<Lyrics>? Lyrics { get; set; }
     }
 }
