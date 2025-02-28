@@ -13,29 +13,27 @@ namespace WuyiMusic_DAL.Models
     {
         [Key]
         public Guid TrackId { get; set; } = Guid.NewGuid();
-
-        [Required]
-        public string Title { get; set; }
-
-        [Required] 
-        public TimeSpan? Duration { get; set; }
-
+        public string? Title { get; set; }
+        public string? Duration { get; set; }
+        public string? TrackImage { get; set; }
         [ForeignKey("Album")]
-        [Required]
         public Guid? AlbumId { get; set; }
         public virtual Album? Album { get; set; }
-
         [ForeignKey("Artist")]
-        [Required]
         public Guid? ArtistId { get; set; }
+        [ForeignKey("Genre")]
+        public Guid? GenreId { get; set; } 
+        public virtual Genre? Genre { get; set; }
         public virtual Artist? Artist { get; set; }
+        public string? MetaLink { get; set; }
+        public string? MetaLinkImage { get; set; }
+        public string? FilePath { get; set; }
+        public int? Likes { get; set; }
+        public int? ListenCount { get; set; } = 0;
+        public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
-        public string FilePath { get; set; }
-        public int Likes { get; set; }
-
+        // Navigation properties
         public virtual ICollection<PlaylistTrack>? PlaylistTracks { get; set; }
-        public virtual ICollection<Comment>? Comments { get; set; }
-        public virtual ICollection<Rating>? Ratings { get; set; }
         public virtual ICollection<Lyrics>? Lyrics { get; set; }
     }
 }

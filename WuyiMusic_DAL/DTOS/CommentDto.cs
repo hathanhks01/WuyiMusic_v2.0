@@ -8,9 +8,10 @@ namespace WuyiMusic_DAL.DTOS
 {
     public class CommentDto
     {
-        public int CommentId { get; set; }
+        public Guid CommentId { get; set; }
         public string Content { get; set; }
-        public int UserId { get; set; }
-        public int TrackId { get; set; }
+        public Guid UserId { get; set; }
+        public Guid TrackId { get; set; }
+        public DateTime CreatedAt { get; set; }
     }
 }

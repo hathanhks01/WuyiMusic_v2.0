@@ -1,10 +1,8 @@
-﻿using Microsoft.AspNetCore.Mvc;
-using NAudio.Wave;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using WuyiMusic_DAL.DTOS;
 using WuyiMusic_DAL.Models;
 using WuyiMusic_Services.IServices;
-
-// For more information on enabling Web API for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
 
 namespace WuyiMusic_API.Controllers
 {
@@ -19,8 +17,8 @@ namespace WuyiMusic_API.Controllers
             _trackService = trackService;
         }
 
-        // GET: api/track
-        [HttpGet]
+        // GET: api/track/getAllTrack
+        [HttpGet("getAllTrack")]
         public async Task<ActionResult<IEnumerable<Track>>> GetAllTracks()
         {
             var tracks = await _trackService.GetAllAsync();
@@ -39,59 +37,86 @@ namespace WuyiMusic_API.Controllers
             return Ok(track);
         }
 
+        // GET: api/track/Favorite?userId={userId}
+        [HttpGet("Favorite")]
+        public async Task<ActionResult<IEnumerable<Track>>> GetFavoriteTracks(Guid userId)
+        {
+            var tracks = await _trackService.GetFavoriteTracksAsync(userId);
+
+            if (tracks == null || !tracks.Any())
+            {
+                return NotFound();
+            }
+
+            return Ok(tracks);
+        }
+
         // POST: api/track/addtrack
         [HttpPost("addtrack")]
+        [Authorize]
         public async Task<IActionResult> AddTrack([FromForm] TrackDto trackDto)
         {
             if (trackDto.File == null || trackDto.File.Length == 0)
                 return BadRequest("No file uploaded.");
 
-            // Tạo đường dẫn tạm thời để lưu file
-            var tempFilePath = Path.GetTempFileName();
-
-            // Lưu file vào đường dẫn tạm thời
-            using (var stream = new FileStream(tempFilePath, FileMode.Create))
+            try
             {
-                await trackDto.File.CopyToAsync(stream);
+                var track = new Track
+                {
+                    TrackId = Guid.NewGuid(),
+                    Title = trackDto.Title,
+                    TrackImage = trackDto.TrackImage,
+                    AlbumId = trackDto.AlbumId,
+                    ArtistId = trackDto.ArtistId,
+                    GenreId = trackDto.GenreId,
+                    FilePath = trackDto.File.FileName,
+                    Likes = 0,
+                };
+
+                await _trackService.AddTrackAsync(track, trackDto.File, trackDto.ImageFile);
+                return CreatedAtAction(nameof(GetTrackById), new { id = track.TrackId }, track);
             }
-
-            // Tính toán thời gian từ file âm thanh
-            TimeSpan duration;
-            using (var reader = new AudioFileReader(tempFilePath))
+            catch (Exception ex)
             {
-                duration = reader.TotalTime;
+                return BadRequest(ex.Message);
             }
-
-            var track = new Track
-            {
-                TrackId = Guid.NewGuid(),
-                Title = trackDto.Title,
-                Duration = duration, 
-                AlbumId = trackDto.AlbumId,
-                ArtistId = trackDto.ArtistId,
-                FilePath = trackDto.File.FileName 
-            };
-
-            await _trackService.AddTrackAsync(track, trackDto.File);
-
-            // Xóa file tạm sau khi đã sử dụng
-            System.IO.File.Delete(tempFilePath);
-
-            return CreatedAtAction(nameof(GetTrackById), new { id = track.TrackId }, track);
         }
 
-        // PUT: api/track/{id}
-        [HttpPut("{id}")]
-        public async Task<IActionResult> UpdateTrack(Guid id, [FromBody] Track track)
+        [HttpPut("UpdateTrack/{id}")]
+        [Consumes("multipart/form-data")]
+        public async Task<IActionResult> UpdateTrack(
+     Guid id,
+     [FromForm] TrackDto trackDto) 
         {
-            if (id != track.TrackId)
+            try
             {
-                return BadRequest();
-            }
+                var track = new Track
+                {
+                    TrackId = id,
+                    Title = trackDto.Title,
+                    TrackImage = trackDto.TrackImage,
+                    AlbumId = trackDto.AlbumId ?? null,
+                    ArtistId = trackDto.ArtistId ?? null,
+                    FilePath = trackDto.File?.FileName
+                };
 
-            await _trackService.UpdateAsync(track);
-            return NoContent();
+                await _trackService.UpdateAsync(track, trackDto.File, trackDto.ImageFile);
+                return NoContent();
+            }
+            catch (ArgumentException ex)
+            {
+                return BadRequest(ex.Message);
+            }
+            catch (KeyNotFoundException)
+            {
+                return NotFound();
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, $"Lỗi server: {ex.Message}");
+            }
         }
+
 
         // DELETE: api/track/{id}
         [HttpDelete("{id}")]
@@ -101,27 +126,50 @@ namespace WuyiMusic_API.Controllers
             return NoContent();
         }
 
-
-        // GET: api/track/play/{id}
-        [HttpGet("play/{id}")]
-        public async Task<IActionResult> PlayTrack(Guid id)
+        // GET: api/track/ranking?startDate=...&endDate=...
+        [HttpGet("ranking")]
+        public async Task<IActionResult> GetTrackRanking([FromQuery] DateTime startDate, [FromQuery] DateTime endDate)
         {
-            var track = await _trackService.GetByIdAsync(id);
-            if (track == null || string.IsNullOrEmpty(track.FilePath))
-            {
-                return NotFound();
-            }
-
-            // Đường dẫn đầy đủ đến file âm thanh
-            var filePath = Path.Combine("path_to_your_audio_files", track.FilePath);
-
-            if (!System.IO.File.Exists(filePath))
-            {
-                return NotFound();
-            }
-
-            var audioFileStream = new FileStream(filePath, FileMode.Open, FileAccess.Read);
-            return File(audioFileStream, "audio/mpeg"); // Hoặc loại MIME phù hợp với định dạng âm thanh của bạn
+            var rankings = await _trackService.GetTrackRankingByListenCount(startDate, endDate);
+            return Ok(rankings);
         }
+
+        // GET: api/track/searchTerm?searchTerm=...
+        [HttpGet]
+        [Route("searchTerm")]
+        public async Task<IActionResult> SearchAsync([FromQuery] string searchTerm)
+        {
+            if (string.IsNullOrWhiteSpace(searchTerm))
+            {
+                return BadRequest(new { message = "Search term cannot be empty." });
+            }
+
+            try
+            {
+                var result = await _trackService.SearchAsync(searchTerm);
+                return Ok(result);
+            }
+            catch (Exception ex)
+            {
+                // Xử lý lỗi và trả về thông báo lỗi
+                return StatusCode(500, new { message = ex.Message });
+            }
+        }
+        [HttpGet("GetRandomTracks")]
+        public async Task<IEnumerable<Track>> GetRandomTracksAsync()
+
+        {
+            return await _trackService.GetRandomTracksAsync();
+        }
+
+        [HttpGet("IncrementListenCount")]
+        public async Task<IActionResult> IncrementListenCount(Guid trackId)
+        {
+            await _trackService.IncrementListenCount(trackId);
+            return Ok();
+        }
+
+
+
     }
 }

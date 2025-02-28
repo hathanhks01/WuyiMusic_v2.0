@@ -8,7 +8,8 @@ namespace WuyiMusic_DAL.DTOS
 {
     public class PlaylistTrackDto
     {
-        public int PlaylistId { get; set; }
-        public int TrackId { get; set; }
+        public Guid Id { get; set; } 
+        public Guid PlaylistId { get; set; }
+        public Guid TrackId { get; set; }
     }
 }

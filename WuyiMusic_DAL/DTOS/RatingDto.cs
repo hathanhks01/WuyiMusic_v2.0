@@ -8,9 +8,9 @@ namespace WuyiMusic_DAL.DTOS
 {
     public class RatingDto
     {
-        public int RatingId { get; set; }
-        public int Value { get; set; }
-        public int UserId { get; set; }
-        public int TrackId { get; set; }
+        public Guid RatingId { get; set; }
+        public Guid UserId { get; set; }
+        public Guid TrackId { get; set; }
+        public int Score { get; set; }
     }
 }

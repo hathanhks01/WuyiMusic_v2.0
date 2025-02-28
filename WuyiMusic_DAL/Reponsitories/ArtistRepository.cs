@@ -1,9 +1,11 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using Azure.Messaging;
+using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using WuyiMusic_DAL.DTOS;
 using WuyiMusic_DAL.IReponsitories;
 using WuyiMusic_DAL.Models;
 
@@ -17,37 +19,105 @@ namespace WuyiMusic_DAL.Reponsitories
         {
             _context = context;
         }
-
-        public async Task<IEnumerable<Artist>> GetAllAsync()
+        public async Task<Artist?> GetArtistByUserIdAsync(Guid userId)
         {
-            return await _context.Artists.ToListAsync();
+            return await _context.Artists
+                .Include(a => a.Tracks) 
+                .Include(a => a.Albums) 
+                .FirstOrDefaultAsync(a => a.UserId == userId);
         }
-
-        public async Task<Artist> GetByIdAsync(Guid id)
+        public async Task<Artist> AddArtist(ArtistDto artistDto, Guid userId)
         {
-            return await _context.Artists.FindAsync(id);
+            var artist = new Artist
+            {
+                ArtistId = userId,
+                Name = artistDto.Name,
+                Bio = artistDto.Bio,
+                IsVerified = artistDto.IsVerified,  
+                UserId=userId,
+                ArtistImage = artistDto.ArtistImage,
+                CreatedAt = DateTime.Now,
+            };
+            await _context.Artists.AddAsync(artist);
+            _context.SaveChanges();
+            return artist;
         }
-
-        public async Task AddAsync(Artist artist)
+        public async Task<Artist> AddArtistForAdm(Artist artist)
         {
             await _context.Artists.AddAsync(artist);
-            await _context.SaveChangesAsync();
+            _context.SaveChanges();
+            return artist;
         }
 
-        public async Task UpdateAsync(Artist artist)
+        public async Task DeleteArtist(Guid id)
         {
-            _context.Artists.Update(artist);
-            await _context.SaveChangesAsync();
-        }
+            var remover = await _context.Artists.FindAsync(id);
 
-        public async Task DeleteAsync(Guid id)
-        {
-            var artist = await GetByIdAsync(id);
-            if (artist != null)
+            if (remover != null)
             {
-                _context.Artists.Remove(artist);
-                await _context.SaveChangesAsync();
+                _context.Artists.Remove(remover); 
+                await _context.SaveChangesAsync(); 
+            }
+            else
+            {
+                throw new KeyNotFoundException("Artist not found.");
             }
         }
+
+
+        public async Task<IEnumerable<object>> GetAllArtist()
+        {
+            return await _context.Artists.ToListAsync();  
+        }
+
+        public async Task<object> GetByIdArtist(Guid id)
+        {
+           var ArtistExist = _context.Artists.Find(id);
+            if (ArtistExist==null)
+            {
+                throw new Exception("Artist does not exist");
+            }
+            return await _context.Artists.FirstOrDefaultAsync(x => x.ArtistId == id); 
+        }
+
+        public async Task<Artist> UpdateArtist(Artist artist)
+        {
+            if (artist == null) throw new ArgumentNullException(nameof(artist));
+
+            var existingArtists = await _context.Artists
+                .FindAsync(artist.ArtistId);
+
+            if (existingArtists == null) throw new InvalidOperationException("Artists không tồn tại.");
+
+            existingArtists.Name = artist.Name;
+            existingArtists.Bio = artist.Bio;
+            existingArtists.IsVerified = artist.IsVerified;
+            existingArtists.ArtistImage = artist.ArtistImage;
+            existingArtists.MetaLink = artist.MetaLink;
+            await _context.SaveChangesAsync();
+            return existingArtists;
+        }
+        private static List<Artist> _previouslySelectedArtists = new List<Artist>();
+
+        public async Task<IEnumerable<Artist>> GetRandomArtistsAsync()
+        {
+            int count = 5;
+            var artists = await _context.Artists.Where(a => a.IsVerified == true).ToListAsync();
+            artists = artists.Except(_previouslySelectedArtists).ToList();
+            if (artists.Count < count)
+            {
+                count = artists.Count; 
+            }
+
+            Random random = new Random();
+
+            var selectedArtists = artists.OrderBy(x => random.Next()).Take(count).ToList();
+
+            _previouslySelectedArtists.AddRange(selectedArtists);
+
+            return selectedArtists;
+        }
+
+
     }
 }

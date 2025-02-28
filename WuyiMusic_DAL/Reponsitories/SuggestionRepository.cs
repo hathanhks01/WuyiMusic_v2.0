@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using WuyiMusic_DAL.DTOS;
 using WuyiMusic_DAL.IReponsitories;
 using WuyiMusic_DAL.Models;
 
@@ -18,36 +19,107 @@ namespace WuyiMusic_DAL.Reponsitories
             _context = context;
         }
 
-        public async Task<IEnumerable<Suggestion>> GetAllAsync()
+        public async Task<Suggestion> AddSuggestion(SuggestionDto suggestionDto)
         {
-            return await _context.Suggestions.ToListAsync();
-        }
-
-        public async Task<Suggestion> GetByIdAsync(Guid id)
-        {
-            return await _context.Suggestions.FindAsync(id);
-        }
-
-        public async Task AddAsync(Suggestion suggestion)
-        {
-            await _context.Suggestions.AddAsync(suggestion);
-            await _context.SaveChangesAsync();
-        }
-
-        public async Task UpdateAsync(Suggestion suggestion)
-        {
-            _context.Suggestions.Update(suggestion);
-            await _context.SaveChangesAsync();
-        }
-
-        public async Task DeleteAsync(Guid id)
-        {
-            var suggestion = await GetByIdAsync(id);
-            if (suggestion != null)
+            var suggestion = new Suggestion
             {
-                _context.Suggestions.Remove(suggestion);
-                await _context.SaveChangesAsync();
+                SuggestionId = Guid.NewGuid(),
+                TrackId = suggestionDto.TrackId,
+                UserId = suggestionDto.UserId,
+            };
+            await _context.Suggestions.AddAsync(suggestion);
+            _context.SaveChanges();
+            return suggestion;
+        }
+
+        public Task DeleteSuggestion(Guid id)
+        {
+            throw new NotImplementedException();
+        }
+
+        public async Task<IEnumerable<object>> GetAllSuggestion()
+        {
+            var result = await _context.Suggestions
+        .Include(sg => sg.Track)
+            .ThenInclude(tr => tr.Album)
+        .Include(sg => sg.Track)
+            .ThenInclude(tr => tr.Artist)
+        .Include(sg => sg.User)
+        .Select(sg => new
+        {
+            sg.SuggestionId,
+            Track = sg.Track == null ? null : new
+            {
+                sg.Track.TrackId,
+                sg.Track.Title,
+                sg.Track.Duration,
+                sg.Track.FilePath,
+                Album = sg.Track.Album == null ? null : new
+                {
+                    sg.Track.Album.AlbumId,
+                    sg.Track.Album.Title
+                },
+                Artist = sg.Track.Artist == null ? null : new
+                {
+                    sg.Track.Artist.ArtistId,
+                    sg.Track.Artist.Name
+                }
+            },
+            User = sg.User == null ? null : new
+            {
+                sg.User.UserId,
+                sg.User.Username,
+                sg.User.Email,
             }
+        }).ToListAsync();
+            return result;
+        }
+
+        public async Task<object> GetByIdSuggestion(Guid id)
+        {
+            var result = await _context.Suggestions.Where(sg => sg.SuggestionId == id).Select(sg => new
+            {
+                sg.SuggestionId,
+                Track = sg.Track == null ? null : new
+                {
+                    sg.Track.TrackId,
+                    sg.Track.Title,
+                    sg.Track.Duration,
+                    sg.Track.FilePath,
+                    Album = sg.Track.Album == null ? null : new
+                    {
+                        sg.Track.Album.AlbumId,
+                        sg.Track.Album.Title
+                    },
+                    Artist = sg.Track.Artist == null ? null : new
+                    {
+                        sg.Track.Artist.ArtistId,
+                        sg.Track.Artist.Name
+                    }
+                },
+                User = sg.User == null ? null : new
+                {
+                    sg.User.UserId,
+                    sg.User.Username,
+                    sg.User.Email,
+                }
+            }).FirstOrDefaultAsync();
+            return result;
+        }
+
+        public async Task<Suggestion> UpdateSuggestion(SuggestionDto suggestionDto)
+        {
+            if (suggestionDto == null) throw new ArgumentNullException(nameof(suggestionDto));
+
+            var existingSuggestion = await _context.Suggestions
+                .FirstOrDefaultAsync(sg => sg.SuggestionId == suggestionDto.SuggestionId);
+
+            if (existingSuggestion == null) throw new InvalidOperationException("Suggestion không tồn tại.");
+
+            existingSuggestion.TrackId = suggestionDto.TrackId;
+            existingSuggestion.UserId = suggestionDto.UserId;
+            await _context.SaveChangesAsync();
+            return existingSuggestion;
         }
     }
 

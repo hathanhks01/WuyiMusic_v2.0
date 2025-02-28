@@ -13,13 +13,11 @@ namespace WuyiMusic_DAL.DTOS
     public class TrackDto
     {
         public string Title { get; set; }
-        public TimeSpan? Duration { get; set; }
+        public string? TrackImage { get; set; }
         public Guid? AlbumId { get; set; }
-
+        public Guid? GenreId { get; set; }
         public Guid? ArtistId { get; set; }
-
-        public int Likes { get; set; }
-        [Required]
-        public IFormFile File { get; set; }
+        public IFormFile? File { get; set; }
+        public IFormFile? ImageFile { get; set; }
     }
 }

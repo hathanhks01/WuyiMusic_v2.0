@@ -8,7 +8,8 @@ namespace WuyiMusic_DAL.DTOS
 {
     public class AdvertisementDto
     {
-        public int AdvertisementId { get; set; }
+        public Guid AdvertisementId { get; set; }
         public string Content { get; set; }
+        public Guid UserId { get; set; }
     }
 }

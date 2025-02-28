@@ -1,11 +1,14 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.AspNetCore.Http;
+using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using WuyiMusic_DAL.DTOS;
 using WuyiMusic_DAL.IReponsitories;
 using WuyiMusic_DAL.Models;
+using NAudio.Wave;
 
 namespace WuyiMusic_DAL.Reponsitories
 {
@@ -20,18 +23,55 @@ namespace WuyiMusic_DAL.Reponsitories
 
         public async Task<IEnumerable<Track>> GetAllAsync()
         {
-            return await _context.Tracks.ToListAsync();
+            return await _context.Tracks.Include(t => t.Artist).Include(g=>g.Genre).ToListAsync();
         }
 
         public async Task<Track> GetByIdAsync(Guid id)
         {
-            return await _context.Tracks.FindAsync(id);
+            return await _context.Tracks
+                .Include(t => t.Artist)
+                .FirstOrDefaultAsync(t => t.TrackId == id);
         }
 
-        public async Task AddAsync(Track track)
+
+        public async Task AddAsync(Track track, IFormFile file)
         {
-            await _context.Tracks.AddAsync(track);
-            await _context.SaveChangesAsync();
+            var tempFilePath = Path.GetTempFileName();
+            try
+            {
+                using (var stream = new FileStream(tempFilePath, FileMode.Create))
+                {
+                    await file.CopyToAsync(stream);
+                }
+
+                using (var reader = new AudioFileReader(tempFilePath))
+                {
+                    var duration = reader.TotalTime;
+                    if (duration.Hours > 0)
+                    {
+                        track.Duration = string.Format("{0:D2}:{1:D2}:{2:D2}",
+                            duration.Hours,
+                            duration.Minutes,
+                            duration.Seconds);
+                    }
+                    else
+                    {
+                        track.Duration = string.Format("{0:D2}:{1:D2}",
+                            duration.Minutes,
+                            duration.Seconds);
+                    }
+                }
+
+                await _context.Tracks.AddAsync(track);
+                await _context.SaveChangesAsync();
+            }
+            finally
+            {
+                if (File.Exists(tempFilePath))
+                {
+                    File.Delete(tempFilePath);
+                }
+            }
         }
 
         public async Task UpdateAsync(Track track)
@@ -49,6 +89,140 @@ namespace WuyiMusic_DAL.Reponsitories
                 await _context.SaveChangesAsync();
             }
         }
-    }
 
+        public async Task<IEnumerable<Track>> GetFavoriteTracksAsync(Guid userId)
+        {
+            return await _context.UserFavoriteTracks
+                .Where(uft => uft.UserId == userId)
+                .Include(uft => uft.Track)
+                .ThenInclude(t => t.Artist)
+                .Select(uft => uft.Track)
+                .ToListAsync();
+        }
+        private static HashSet<Guid> _previouslyRetrievedTrackIds = new HashSet<Guid>();
+        public async Task<List<Track>> GetRandomTracksAsync()
+        {
+            int count = 9;
+            // Get all available track IDs
+            var allTrackIds = await _context.Tracks
+                .Select(t => t.TrackId)
+                .ToListAsync();
+
+            // Exclude previously retrieved tracks
+            var availableTrackIds = allTrackIds
+                .Where(id => !_previouslyRetrievedTrackIds.Contains(id))
+                .ToList();
+
+            // If we don't have enough tracks, reset the exclusion list
+            if (availableTrackIds.Count < count)
+            {
+                _previouslyRetrievedTrackIds.Clear();
+                availableTrackIds = allTrackIds;
+            }
+
+            // Select random tracks
+            var randomTrackIds = new List<Guid>();
+            var random = new Random();
+
+            for (int i = 0; i < count && availableTrackIds.Count > 0; i++)
+            {
+                int randomIndex = random.Next(0, availableTrackIds.Count);
+                randomTrackIds.Add(availableTrackIds[randomIndex]);
+                availableTrackIds.RemoveAt(randomIndex);
+            }
+
+            // Get the tracks with their related data
+            var randomTracks = await _context.Tracks
+                .Where(t => randomTrackIds.Contains(t.TrackId))
+                .Include(t => t.Artist)
+                .Include(t => t.Album)
+                .Include(t => t.Genre)
+                .ToListAsync();
+
+            // Update the previously retrieved IDs
+            _previouslyRetrievedTrackIds = new HashSet<Guid>(randomTrackIds);
+
+            return randomTracks;
+        }
+
+        public async Task<List<Track>> GetTrackRankingByListenCount(DateTime startDate, DateTime endDate, int topCount = 10)
+        {
+            var rankings = await _context.Tracks
+                .Where(t => t.CreatedAt >= startDate && t.CreatedAt <= endDate)
+                .OrderByDescending(t => t.ListenCount ?? 0)
+                .Take(topCount)
+                .Select(t => new Track
+                {
+                    TrackId = t.TrackId,
+                    Title = t.Title,
+                    Artist = t.Artist,
+                    ListenCount = t.ListenCount ?? 0,
+                    TrackImage = t.TrackImage
+                })
+                .ToListAsync();
+
+            return rankings;
+        }
+
+        public async Task<SearchResultDto> SearchAsync(string searchTerm)
+        {
+            // Normalize search term
+            searchTerm = searchTerm.ToLower().Trim();
+
+            // Search Tracks
+            var tracks = await _context.Tracks
+                .Where(t => t.Title.ToLower().Contains(searchTerm) ||
+                            t.Artist.Name.ToLower().Contains(searchTerm))
+                .Select(t => new TrackDto
+                {
+                    Title = t.Title,
+                    TrackImage = t.TrackImage,
+                    AlbumId = t.AlbumId,
+                    ArtistId = t.ArtistId
+                })
+                .Take(10)
+                .ToListAsync();
+
+            // Search Artists
+            var artists = await _context.Artists
+                .Where(a => a.Name.ToLower().Contains(searchTerm))
+                .Select(a => new ArtistDto
+                {
+                    ArtistId = a.ArtistId,
+                    Name = a.Name,
+                    Bio = a.Bio,
+                    ArtistImage = a.ArtistImage,
+                })
+                .Take(10)
+                .ToListAsync();
+
+            return new SearchResultDto
+            {
+                Tracks = tracks,
+                Artists = artists
+            };
+
+        }
+
+        public async Task IncrementListenCount(Guid trackId)
+        {
+            var track = await _context.Tracks.FindAsync(trackId);
+            if (track != null)
+            {
+                track.ListenCount += 1;
+                await _context.SaveChangesAsync();
+            }
+            else
+            {
+                throw new KeyNotFoundException($"Track with ID {trackId} not found.");
+            }
+        }
+
+
+        public class TrackListeningStatistic
+        {
+            public DateTime Hour { get; set; }
+            public int ListenCount { get; set; }
+        }
+    }
 }

@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using WuyiMusic_DAL.DTOS;
 using WuyiMusic_DAL.IReponsitories;
 using WuyiMusic_DAL.Models;
 
@@ -18,36 +19,75 @@ namespace WuyiMusic_DAL.Reponsitories
             _context = context;
         }
 
-        public async Task<IEnumerable<Playlist>> GetAllAsync()
+        public async Task<Playlist> AddPlaylist(PlaylistDto playlistDto)
         {
-            return await _context.Playlists.ToListAsync();
-        }
-
-        public async Task<Playlist> GetByIdAsync(Guid id)
-        {
-            return await _context.Playlists.FindAsync(id);
-        }
-
-        public async Task AddAsync(Playlist playlist)
-        {
-            await _context.Playlists.AddAsync(playlist);
-            await _context.SaveChangesAsync();
-        }
-
-        public async Task UpdateAsync(Playlist playlist)
-        {
-            _context.Playlists.Update(playlist);
-            await _context.SaveChangesAsync();
-        }
-
-        public async Task DeleteAsync(Guid id)
-        {
-            var playlist = await GetByIdAsync(id);
-            if (playlist != null)
+            var playlist = new Playlist
             {
-                _context.Playlists.Remove(playlist);
-                await _context.SaveChangesAsync();
+                PlaylistId = Guid.NewGuid(),
+                UserId = playlistDto.UserId,
+                Title = playlistDto.Tittle,
+                CreatedAt = DateTime.Now,
+            };
+            await _context.Playlists.AddAsync(playlist);
+            _context.SaveChanges();
+            return playlist;
+        }
+
+        public async Task DeletePlaylist(Guid id)
+        {
+            throw new NotImplementedException();
+        }
+
+        public async Task<IEnumerable<object>> GetAllPlaylist()
+        {
+            var result = await _context.Playlists
+        .Include(pl => pl.User)
+        .Select(pl => new
+        {
+            pl.PlaylistId,
+            pl.Title,
+            pl.CreatedAt,           
+            User = pl.User == null ? null : new
+            {
+                pl.User.UserId,
+                pl.User.Username,
+                pl.User.Email,
             }
+        }).ToListAsync();
+            return result;
+        }
+
+        public async Task<object> GetByIdPlaylist(Guid id)
+        {
+            var result = await _context.Playlists.Where(pl => pl.PlaylistId == id).Select(pl => new
+            {
+                pl.PlaylistId,
+                pl.Title,
+                pl.CreatedAt,               
+                User = pl.User == null ? null : new
+                {
+                    pl.User.UserId,
+                    pl.User.Username,
+                    pl.User.Email
+                }
+            }).FirstOrDefaultAsync();
+            return result;
+        }
+
+        public async Task<Playlist> UpdatePlaylist(PlaylistDto playlistDto)
+        {
+            if (playlistDto == null) throw new ArgumentNullException(nameof(playlistDto));
+
+            var existingPlaylist = await _context.Playlists
+                .FirstOrDefaultAsync(pl => pl.PlaylistId == playlistDto.PlaylistId);
+
+            if (existingPlaylist == null) throw new InvalidOperationException("Playlist không tồn tại.");
+
+            existingPlaylist.UserId = playlistDto.UserId;
+            existingPlaylist.Title = playlistDto.Tittle;
+            existingPlaylist.CreatedAt = playlistDto.CreatedAt;
+            await _context.SaveChangesAsync();
+            return existingPlaylist;
         }
     }
 
