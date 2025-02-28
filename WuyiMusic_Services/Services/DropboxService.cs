@@ -346,18 +346,12 @@ namespace WuyiMusic_Services.Services
                 throw new ArgumentException("Tên file phải bao gồm phần mở rộng (ví dụ: .jpg, .png, .gif, .webp)");
             }
 
-            // Xác định loại MIME dựa trên phần mở rộng file
             string mimeType = GetImageMimeType(Path.GetExtension(imageName).ToLowerInvariant());
-
-            // Tạo đường dẫn đầy đủ cho thư mục ảnh
             var fullPath = $"/WuyiMusic_Images/{imageName}";
-
-            // Kiểm tra và reset vị trí stream
             if (imageStream.CanSeek)
             {
                 imageStream.Position = 0;
             }
-
             if (imageStream.Length == 0)
             {
                 throw new Exception("Luồng ảnh trống");
@@ -365,7 +359,6 @@ namespace WuyiMusic_Services.Services
 
             using (var memoryStream = new MemoryStream())
             {
-                // Sao chép stream ảnh vào memory stream
                 await imageStream.CopyToAsync(memoryStream);
                 memoryStream.Position = 0;
 

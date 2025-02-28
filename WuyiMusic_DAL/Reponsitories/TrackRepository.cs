@@ -23,7 +23,7 @@ namespace WuyiMusic_DAL.Reponsitories
 
         public async Task<IEnumerable<Track>> GetAllAsync()
         {
-            return await _context.Tracks.Include(t => t.Artist).ToListAsync();
+            return await _context.Tracks.Include(t => t.Artist).Include(g=>g.Genre).ToListAsync();
         }
 
         public async Task<Track> GetByIdAsync(Guid id)
@@ -99,13 +99,50 @@ namespace WuyiMusic_DAL.Reponsitories
                 .Select(uft => uft.Track)
                 .ToListAsync();
         }
-        public async Task<IEnumerable<Track>> GetRandom6Track(Guid artistId)
+        private static HashSet<Guid> _previouslyRetrievedTrackIds = new HashSet<Guid>();
+        public async Task<List<Track>> GetRandomTracksAsync()
         {
-            return await _context.Tracks
-                .Where(t => t.ArtistId == artistId)
-                .OrderBy(t => Guid.NewGuid()) 
-                .Take(6)
+            int count = 9;
+            // Get all available track IDs
+            var allTrackIds = await _context.Tracks
+                .Select(t => t.TrackId)
                 .ToListAsync();
+
+            // Exclude previously retrieved tracks
+            var availableTrackIds = allTrackIds
+                .Where(id => !_previouslyRetrievedTrackIds.Contains(id))
+                .ToList();
+
+            // If we don't have enough tracks, reset the exclusion list
+            if (availableTrackIds.Count < count)
+            {
+                _previouslyRetrievedTrackIds.Clear();
+                availableTrackIds = allTrackIds;
+            }
+
+            // Select random tracks
+            var randomTrackIds = new List<Guid>();
+            var random = new Random();
+
+            for (int i = 0; i < count && availableTrackIds.Count > 0; i++)
+            {
+                int randomIndex = random.Next(0, availableTrackIds.Count);
+                randomTrackIds.Add(availableTrackIds[randomIndex]);
+                availableTrackIds.RemoveAt(randomIndex);
+            }
+
+            // Get the tracks with their related data
+            var randomTracks = await _context.Tracks
+                .Where(t => randomTrackIds.Contains(t.TrackId))
+                .Include(t => t.Artist)
+                .Include(t => t.Album)
+                .Include(t => t.Genre)
+                .ToListAsync();
+
+            // Update the previously retrieved IDs
+            _previouslyRetrievedTrackIds = new HashSet<Guid>(randomTrackIds);
+
+            return randomTracks;
         }
 
         public async Task<List<Track>> GetTrackRankingByListenCount(DateTime startDate, DateTime endDate, int topCount = 10)

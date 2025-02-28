@@ -1,5 +1,6 @@
 ﻿using Dropbox.Api.Files;
 using Microsoft.AspNetCore.Http;
+using NAudio.Wave;
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
@@ -98,6 +99,39 @@ namespace WuyiMusic_Services.Services
                             newFileName,
                             folder
                         );
+                        var tempFilePath = Path.GetTempFileName();
+                        try
+                        {
+                            using (var fileStream = new FileStream(tempFilePath, FileMode.Create))
+                            {
+                                await file.CopyToAsync(fileStream);
+                            }
+
+                            using (var reader = new AudioFileReader(tempFilePath))
+                            {
+                                var duration = reader.TotalTime;
+                                if (duration.Hours > 0)
+                                {
+                                    existingTrack.Duration = string.Format("{0:D2}:{1:D2}:{2:D2}",
+                                        duration.Hours,
+                                        duration.Minutes,
+                                        duration.Seconds);
+                                }
+                                else
+                                {
+                                    existingTrack.Duration = string.Format("{0:D2}:{1:D2}",
+                                        duration.Minutes,
+                                        duration.Seconds);
+                                }
+                            }
+                        }
+                        finally
+                        {
+                            if (File.Exists(tempFilePath))
+                            {
+                                File.Delete(tempFilePath);
+                            }
+                        }
 
                         var sharedLinkResult = await _dropboxService.GetPermanentSharedLinkAsync(newFileName);
                         existingTrack.FilePath = sharedLinkResult.DirectLink;
@@ -152,7 +186,50 @@ namespace WuyiMusic_Services.Services
             // Lưu thay đổi vào database
             await _trackRepository.UpdateAsync(existingTrack);
         }
-        //hiện tại phương thức này nếu chưa xóa ở dropbox thì sẽ k xóa dc track (ràng buộc)
+        ////hiện tại phương thức này nếu chưa xóa ở dropbox thì sẽ k xóa dc track (ràng buộc)
+        //public async Task DeleteAsync(Guid id)
+        //{
+        //    var trackToDelete = await _trackRepository.GetByIdAsync(id);
+        //    if (trackToDelete == null)
+        //    {
+        //        throw new KeyNotFoundException($"Track with ID {id} not found.");
+        //    }
+
+        //    try
+        //    {
+        //        if (!string.IsNullOrEmpty(trackToDelete.MetaLink))
+        //        {
+        //            var internalPath = await _dropboxService.GetInternalPathFromSharedLinkAsync(trackToDelete.MetaLink);
+        //            if (!string.IsNullOrEmpty(internalPath))
+        //            {
+        //                var fileDeleted = await _dropboxService.DeleteFileFromDropboxAsync(internalPath);
+        //                if (!fileDeleted)
+        //                {
+        //                    Console.WriteLine($"File not found in Dropbox for track {id}. Proceeding with track deletion.");
+        //                }
+        //            }
+        //        }
+        //        if (!string.IsNullOrEmpty(trackToDelete.MetaLinkImage))
+        //        {
+        //            var imageInternalPath = await _dropboxService.GetInternalPathFromSharedLinkAsync(trackToDelete.MetaLinkImage);
+        //            if (!string.IsNullOrEmpty(imageInternalPath))
+        //            {
+        //                var imageDeleted = await _dropboxService.DeleteFileFromDropboxAsync(imageInternalPath);
+        //                if (!imageDeleted)
+        //                {
+        //                    Console.WriteLine($"Ảnh không tồn tại trên Dropbox cho track {id}. Tiếp tục xóa track.");
+        //                }
+        //            }
+        //        }
+        //        await _trackRepository.DeleteAsync(id);
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        throw new Exception($"Failed to delete track with ID {id}. Error: {ex.Message}", ex);
+        //    }
+        //}
+
+
         public async Task DeleteAsync(Guid id)
         {
             var trackToDelete = await _trackRepository.GetByIdAsync(id);
@@ -163,30 +240,43 @@ namespace WuyiMusic_Services.Services
 
             try
             {
+                // Xử lý file audio
                 if (!string.IsNullOrEmpty(trackToDelete.MetaLink))
                 {
-                    var internalPath = await _dropboxService.GetInternalPathFromSharedLinkAsync(trackToDelete.MetaLink);
-                    if (!string.IsNullOrEmpty(internalPath))
+                    try
                     {
-                        var fileDeleted = await _dropboxService.DeleteFileFromDropboxAsync(internalPath);
-                        if (!fileDeleted)
+                        var internalPath = await _dropboxService.GetInternalPathFromSharedLinkAsync(trackToDelete.MetaLink);
+                        if (!string.IsNullOrEmpty(internalPath))
                         {
-                            Console.WriteLine($"File not found in Dropbox for track {id}. Proceeding with track deletion.");
+                            await _dropboxService.DeleteFileFromDropboxAsync(internalPath);
                         }
                     }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine($"Lỗi khi xóa file audio: {ex.Message}");
+                        // Bỏ qua lỗi và tiếp tục xử lý
+                    }
                 }
+
+                // Xử lý file ảnh
                 if (!string.IsNullOrEmpty(trackToDelete.MetaLinkImage))
                 {
-                    var imageInternalPath = await _dropboxService.GetInternalPathFromSharedLinkAsync(trackToDelete.MetaLinkImage);
-                    if (!string.IsNullOrEmpty(imageInternalPath))
+                    try
                     {
-                        var imageDeleted = await _dropboxService.DeleteFileFromDropboxAsync(imageInternalPath);
-                        if (!imageDeleted)
+                        var imageInternalPath = await _dropboxService.GetInternalPathFromSharedLinkAsync(trackToDelete.MetaLinkImage);
+                        if (!string.IsNullOrEmpty(imageInternalPath))
                         {
-                            Console.WriteLine($"Ảnh không tồn tại trên Dropbox cho track {id}. Tiếp tục xóa track.");
+                            await _dropboxService.DeleteFileFromDropboxAsync(imageInternalPath);
                         }
                     }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine($"Lỗi khi xóa file ảnh: {ex.Message}");
+                        // Bỏ qua lỗi và tiếp tục xử lý
+                    }
                 }
+
+                // Luôn luôn thực hiện xóa track dù có lỗi với file hay không
                 await _trackRepository.DeleteAsync(id);
             }
             catch (Exception ex)
@@ -204,21 +294,23 @@ namespace WuyiMusic_Services.Services
             return await _trackRepository.GetTrackRankingByListenCount(startDate, endDate, topCount);
         }
 
-     
+
 
         public async Task<SearchResultDto> SearchAsync(string searchTerm)
         {
             return await _trackRepository.SearchAsync(searchTerm);
         }
 
-        public Task<IEnumerable<Track>> GetRandom6Track(Guid artistId)
-        {
-            return _trackRepository.GetRandom6Track(artistId);
-        }
+      
 
         public async Task IncrementListenCount(Guid trackId)
         {
-           await _trackRepository.IncrementListenCount(trackId);
+            await _trackRepository.IncrementListenCount(trackId);
+        }
+
+        public async Task<List<Track>> GetRandomTracksAsync()
+        {
+          return await _trackRepository.GetRandomTracksAsync();
         }
     }
 }

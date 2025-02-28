@@ -68,7 +68,7 @@ namespace WuyiMusic_API.Controllers
                     TrackImage = trackDto.TrackImage,
                     AlbumId = trackDto.AlbumId,
                     ArtistId = trackDto.ArtistId,
-                    GenreId=trackDto.GenreId,
+                    GenreId = trackDto.GenreId,
                     FilePath = trackDto.File.FileName,
                     Likes = 0,
                 };
@@ -86,7 +86,7 @@ namespace WuyiMusic_API.Controllers
         [Consumes("multipart/form-data")]
         public async Task<IActionResult> UpdateTrack(
      Guid id,
-     [FromForm] TrackDto trackDto) // Chỉ sử dụng 1 parameter [FromForm]
+     [FromForm] TrackDto trackDto) 
         {
             try
             {
@@ -155,18 +155,18 @@ namespace WuyiMusic_API.Controllers
                 return StatusCode(500, new { message = ex.Message });
             }
         }
-        [HttpGet("GetRandom6Track/{artistId}")]
-        public async Task<IEnumerable<Track>> GetRandom6TracksAsync(Guid artistId)
+        [HttpGet("GetRandomTracks")]
+        public async Task<IEnumerable<Track>> GetRandomTracksAsync()
 
         {
-            return await _trackService.GetRandom6Track(artistId);
+            return await _trackService.GetRandomTracksAsync();
         }
 
         [HttpGet("IncrementListenCount")]
         public async Task<IActionResult> IncrementListenCount(Guid trackId)
         {
             await _trackService.IncrementListenCount(trackId);
-            return Ok(); 
+            return Ok();
         }
 
 

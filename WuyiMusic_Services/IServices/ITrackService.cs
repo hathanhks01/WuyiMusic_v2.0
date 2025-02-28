@@ -20,7 +20,7 @@ namespace WuyiMusic_Services.IServices
         Task DeleteAsync(Guid id);
         Task<IEnumerable<Track>> GetFavoriteTracksAsync(Guid userId);
         Task<List<Track>> GetTrackRankingByListenCount(DateTime startDate, DateTime endDate, int topCount = 10);
-        Task<IEnumerable<Track>> GetRandom6Track(Guid artistId);
+        Task<List<Track>> GetRandomTracksAsync();
         Task IncrementListenCount(Guid trackId);
     }
 }
